@@ -1,0 +1,23 @@
+{
+  "name": "marketmakerbot",
+  "version": "1.0.0",
+  "description": "Bot developing for Qume",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JanakiramYellapu/MarketMakerBot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JanakiramYellapu/MarketMakerBot/issues"
+  },
+  "homepage": "https://github.com/JanakiramYellapu/MarketMakerBot#readme",
+  "dependencies": {
+    "bitmex-node": "^1.9.0",
+    "bitmex-realtime-api": "^0.4.3"
+  }
+}
