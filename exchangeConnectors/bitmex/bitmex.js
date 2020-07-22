@@ -2,13 +2,14 @@ const { Order, Position, Wallet, Leverage, BookTicker } = require("../../seriali
 // const APIError = require("../../utils/error")
 const { BitmexAPI } = require("bitmex-node")
 const BitmexWS = require('bitmex-realtime-api');
+const wait = n => new Promise(r => setTimeout(r, n));
 
 class Bitmex {
     constructor({ API_KEY, API_SECRET, testnet, symbol }) {
         this.client = new BitmexAPI({
             apiKeyID: API_KEY,
             apiKeySecret: API_SECRET,
-            testnet: testnet ? testnet : false
+            testnet: true //testnet ? testnet : false
         })
         this.wsClient = new BitmexWS({
             testnet: testnet ? testnet : false
@@ -28,17 +29,17 @@ class Bitmex {
 
     }
 
-    resetRateLimit = (delay) => {
-        // setTimeout(() => {
-        //     this.RATE_LIMIT_BLOCKED = false
-        // }, delay);
-    }
+    // resetRateLimit = (delay) => {
+    //     // setTimeout(() => {
+    //     //     this.RATE_LIMIT_BLOCKED = false
+    //     // }, delay);
+    // }
 
-    futuresBuy = async (symbol, quantity, price, params = {}, callback = false) => {
+    async futuresBuy(symbol, quantity, price, params = {}, callback = false){
         try {
-            if (this.RATE_LIMIT_BLOCKED) {
-                throw new Error(this.RATE_LIMIT_MSG)
-            }
+            // if (this.RATE_LIMIT_BLOCKED) {
+            //     throw new Error(this.RATE_LIMIT_MSG)
+            // }
             const response = await this.client.Order.new({
                 symbol,
                 orderQty: quantity,
@@ -52,26 +53,27 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresBuy",
-                    data: { symbol, quantity, price, params }
-                }
-            })
+            console.log(error)
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresBuy",
+            //         data: { symbol, quantity, price, params }
+            //     }
+            // })
         }
     }
 
-    futuresSell = async (symbol, quantity, price, params = {}, callback = false) => {
+    async futuresSell(symbol, quantity, price, params = {}, callback = false){
         try {
             if (this.RATE_LIMIT_BLOCKED) {
                 throw new Error(this.RATE_LIMIT_MSG)
@@ -89,26 +91,26 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresSell",
-                    data: { symbol, quantity, price, params }
-                }
-            })
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresSell",
+            //         data: { symbol, quantity, price, params }
+            //     }
+            // })
         }
     }
 
-    futuresMarketBuy = async (symbol, quantity, params = {}, callback = false) => {
+    async futuresMarketBuy(symbol, quantity, params = {}, callback = false){
         try {
             if (this.RATE_LIMIT_BLOCKED) {
                 throw new Error(this.RATE_LIMIT_MSG)
@@ -125,27 +127,27 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresMarketBuy",
-                    data: { symbol, quantity, params }
-                }
-            })
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresMarketBuy",
+            //         data: { symbol, quantity, params }
+            //     }
+            // })
         }
     }
 
 
-    futuresMarketSell = async (symbol, quantity, params = {}, callback = false) => {
+    async futuresMarketSell(symbol, quantity, params = {}, callback = false){
         try {
             if (this.RATE_LIMIT_BLOCKED) {
                 throw new Error(this.RATE_LIMIT_MSG)
@@ -162,25 +164,25 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresBuy",
-                    data: { symbol, quantity, params }
-                }
-            })
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresBuy",
+            //         data: { symbol, quantity, params }
+            //     }
+            // })
         }
     }
-    futuresMarketBuyAsync = async ({symbol, quantity, params}) => {
+    async futuresMarketBuyAsync({symbol, quantity, params}){
         return new Promise((resolve, reject) => {
             this.futuresMarketBuy(symbol, quantity, params || {}, (order) => { })
                 .then((order => resolve(order.toJSON())))
@@ -188,7 +190,7 @@ class Bitmex {
         })
     }
 
-    futuresMarketSellAsync = async ({symbol, quantity, params }) => {
+    async futuresMarketSellAsync({symbol, quantity, params }){
         return new Promise((resolve, reject) => {
             this.futuresMarketSell(symbol, quantity, params || {}, (order) => { })
                 .then((order => resolve(order.toJSON())))
@@ -197,7 +199,7 @@ class Bitmex {
         })
     }
 
-    futuresBuyAsync = async ({symbol, quantity, price, params}) => {
+    async futuresBuyAsync({symbol, quantity, price, params}){
         return new Promise((resolve, reject) => {
             this.futuresBuy(symbol, quantity, price, params || {}, (order) => { })
                 .then((order => resolve(order.toJSON())))
@@ -205,7 +207,7 @@ class Bitmex {
         })
     }
 
-    futuresSellAsync = async ({symbol, quantity, price, params}) => {
+    async futuresSellAsync({symbol, quantity, price, params}){
         return new Promise((resolve, reject) => {
             this.futuresSell(symbol, quantity, price, params || {}, (order) => { })
                 .then((order => resolve(order.toJSON())))
@@ -213,7 +215,7 @@ class Bitmex {
         })
     }
 
-    futuresUpdateLeverage = async (symbol, leverage, params = {}) => {
+    async futuresUpdateLeverage(symbol, leverage, params = {}){
         try {
             const position = await this.futuresPosition(symbol)
             if (position.leverage === leverage)
@@ -221,127 +223,171 @@ class Bitmex {
             const response = await this.client.Position.updateLeverage({ symbol, leverage })
             return new Leverage().transformBitmex(response)
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresUpdateLeverage",
-                    data: { symbol, leverage, params }
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresUpdateLeverage",
+            //         data: { symbol, leverage, params }
+            //     }
+            // })
         }
     }
 
-    futuresPosition = async (symbol, params = {}) => {
+    async futuresPosition(symbol, params = {}){
         try {
+            // console.log("inside futures-position")
             const positions = await this.client.Position.get({ filter: JSON.stringify({ symbol }) })
-            return new Position().transformBitmex(positions, symbol)
+            // console.log("inside futures position")
+            // positions.then(function(result) {
+            //     console.log(result); 
+            //   })
+            return positions
+            // return new Position().transformBitmex(positions, symbol)
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresPosition",
-                    data: { symbol, params }
-                }
-            })
+            console.log("inside error")
+            console.log(error)
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresPosition",
+            //         data: { symbol, params }
+            //     }
+            // })
         }
     }
 
-    futuresWallet = async () => {
+    async futuresInstrument(symbol){
+        try {
+            // console.log("inside futures instrument")
+            let matchingInstrument = []
+            const response = await this.client.Instrument.getActive()
+            // console.log(response[0])
+            for(let i = 0; i<response.length;i++){
+                if(response[i].symbol == symbol){
+                    matchingInstrument.push(response[i])
+                }
+            }
+            if(matchingInstrument.length == 0){
+                    throw("Unable to find instrument or index with symbol: " + symbol)}
+            let instrument = matchingInstrument[0]
+            // console.log("instrument---",instrument)
+            instrument.tickLog = 1
+            return instrument
+            // # Turn the 'tickSize' into 'tickLog' for use in rounding
+            // # http://stackoverflow.com/a/6190291/832202
+            // instrument['tickLog'] = decimal.Decimal(str(instrument['tickSize'])).as_tuple().exponent * -1
+            // return new Wallet().transformBitmex(instrument)
+        } catch (error) {
+                console.log(error)
+    //         throw new APIError({
+    //             message: error.message,
+    //             name: this.errorBanner,
+    //             meta: {
+    //                 origin: "futuresWallet",
+    //             }
+    //         })
+        }
+    }
+
+    async futuresWallet(){
         try {
             const response = await this.client.User.getWallet()
-            return new Wallet().transformBitmex(response)
+            // await wait(2*1000)
+            return response.data
+            // return new Wallet().transformBitmex(response)
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresWallet",
-                }
-            })
+                console.log(error)
+    //         throw new APIError({
+    //             message: error.message,
+    //             name: this.errorBanner,
+    //             meta: {
+    //                 origin: "futuresWallet",
+    //             }
+    //         })
         }
     }
 
-    futuresOrderStatus = async (symbol, orderID) => {
+    async futuresOrderStatus(symbol, orderID){
         try {
             let response = await this.client.Order.getOrders({ filter: JSON.stringify({ symbol, orderID }) })
             if (!response.length) throw new Error("No order with order ID " + orderID)
             response = response.pop()
             return new Order().transformBitmex(response)
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresOrderStatus",
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresOrderStatus",
+            //     }
+            // })
         }
     }
 
-    futuresCancelOrder = async (symbol, orderID) => {
+    async futuresCancelOrder(symbol, orderID){
         try {
             let response = await this.client.Order.cancel({ orderID, symbol })
             if (!response.length) throw new Error("No order with order ID " + orderID)
             response = response.pop()
             return new Order().transformBitmex(response)
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresCancelOrder",
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresCancelOrder",
+            //     }
+            // })
         }
     }
 
-    futuresCancelAll = async (symbol) => {
+    async futuresCancelAll(symbol){
         try {
             let response = await this.client.Order.cancelAll({ symbol })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresCancelOrder",
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresCancelOrder",
+            //     }
+            // })
         }
     }
 
-    futuresOpenOrders = async () => {
+    async futuresOpenOrders(){
         try {
             let response = await this.client.Order.getOrders({ filter: JSON.stringify({ ordStatus: "New" }) })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresOpenOrders",
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresOpenOrders",
+            //     }
+            // })
         }
     }
-    futuresAllOrders = async (symbol) => {
+    async futuresAllOrders(symbol){
         try {
             let response = await this.client.Order.getOrders({ symbol })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            throw new APIError({
-                message: error.message,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresAllOrders",
-                }
-            })
+            // throw new APIError({
+            //     message: error.message,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresAllOrders",
+            //     }
+            // })
         }
     }
 
-    futuresOrder = async (orderBody, callback = false) => {
+    async futuresOrder(orderBody, callback = false){
         try {
             if (this.RATE_LIMIT_BLOCKED) {
                 throw new Error(this.RATE_LIMIT_MSG)
@@ -354,27 +400,27 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                stack: error.stack,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresOrder",
-                    data: orderBody
-                }
-            })
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     stack: error.stack,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresOrder",
+            //         data: orderBody
+            //     }
+            // })
         }
     }
 
-    futuresClosePosition = async (symbol, options = false, callback = false) => {
+    async futuresClosePosition(symbol, options = false, callback = false){
         try {
             if (this.RATE_LIMIT_BLOCKED) {
                 throw new Error(this.RATE_LIMIT_MSG)
@@ -391,27 +437,27 @@ class Bitmex {
             const counterOrder = position.prepareCounterOrderBitmex(options)
             return await this.futuresOrder({ symbol, ...counterOrder }, callback)
         } catch (error) {
-            if (error.message != this.RATE_LIMIT_MSG) {
-                this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
-                this.RATE_LIMIT_DELAY =
-                    this.RATE_LIMIT_DELAY >= 4000
-                        ? 4000
-                        : this.RATE_LIMIT_DELAY + 10;
-            }
-            throw new APIError({
-                message: error.message,
-                stack: error.stack,
-                name: this.errorBanner,
-                meta: {
-                    origin: "futuresClosePosition",
-                    data: options
-                }
-            })
+            // if (error.message != this.RATE_LIMIT_MSG) {
+            //     this.RATE_LIMIT_BLOCKED = false
+            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
+            //     this.RATE_LIMIT_DELAY =
+            //         this.RATE_LIMIT_DELAY >= 4000
+            //             ? 4000
+            //             : this.RATE_LIMIT_DELAY + 10;
+            // }
+            // throw new APIError({
+            //     message: error.message,
+            //     stack: error.stack,
+            //     name: this.errorBanner,
+            //     meta: {
+            //         origin: "futuresClosePosition",
+            //         data: options
+            //     }
+            // })
         }
     }
 
-    futuresClosePositionAsync = async ({symbol, options}) => {
+    async futuresClosePositionAsync({symbol, options}){
         return new Promise((resolve, reject) => {
             this.futuresClosePosition(symbol, options || {}, (order) => { })
                 .then((order => resolve(order.toJSON())))
@@ -419,20 +465,21 @@ class Bitmex {
         })
     }
 
-    futuresBookTickerStream = async (Symbol, callback) => {
+    async futuresBookTickerStream(Symbol, callback){
         try {
             if (this.WS_CLOSED)
                 this.wsClient.socket.reconnect()
             this.WS_CLOSED = false
             this.wsClient.addStream(Symbol, 'orderBook10', (data, symbol) => {
-                callback(new BookTicker().transformBitmex(data, symbol).toJSON())
+                console.log(data)
+                // callback(new BookTicker().transformBitmex(data, symbol).toJSON())
             });
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
-    futuresTerminateBookTickerStream = async (symbol) => {
+    async futuresTerminateBookTickerStream(symbol){
         try {
             this.wsClient.socket.instance.removeAllListeners()
             delete this.wsClient.listenerTree.open
@@ -444,39 +491,39 @@ class Bitmex {
             this.WS_CLOSED = true
             return true
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
-    futuresUserDataStream = async (callback) => {
+    async futuresUserDataStream(callback){
         try {
             return true
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
-    futuresUserStream = async () => {
+    async futuresUserStream(){
         try {
             return true
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
-    futuresTerminateUserStream = async () => {
+    async futuresTerminateUserStream(){
         try {
             return true
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
-    watchOrder = (orderId, callback) => {
+    watchOrder(orderId, callback){
         try {
             return true
         } catch (error) {
-            throw new APIError(error)
+            // throw new APIError(error)
         }
     }
 
@@ -493,6 +540,44 @@ class Bitmex {
 //     API_SECRET: "bbVRdh_L_5pZ1tE7iXo7AyJxURmwFmx0Mp6GADcjG48w4APt",
 //     testnet: true
 // })
+
+
+
+let client = new Bitmex({
+    API_KEY: "ZLxQoSxYmpMOXT_M_STHudMV",
+    API_SECRET: "PWeh1XiJ8kg_139lNq6LvJB6AB3vR1pHbF3Dqj07x2IuqXtZ",
+    testnet: true,
+    symbol:"XBTUSD"
+})
+function  run(){
+    //  client.futuresBuy(symbol="XBTUSD", quantity=100,price=9000).then(function(result) {
+    //     console.log(result); // "normalReturn"
+    //   })
+    // client.futuresMarketBuyAsync(symbol="XBTUSD", quantity=100).then(function(result) {
+    //     console.log(result); // "normalReturn"
+    //   })
+    // client.futuresUpdateLeverage("BTCUSDT",1,1)
+    // client.futuresPosition("XBTUSD")
+    client.futuresInstrument("XBTUSD").then(function(result) {
+            console.log(result); 
+          })
+    // client.futuresOrderStatus("BTCUSDT",117993)
+    // client.futuresCancelOrder("BTCUSDT",117993)
+    // client.futuresCancelAll("BTCUSDT")
+    // client.futuresOpenOrders("BTCUSDT")
+    // client.futuresAllOrders("BTCUSDT")
+    // client.futuresBookTickerStream("XBTUSD")
+    // client.futuresTerminateBookTickerStream("BTCUSDT")
+    // client.futuresClosePosition("BTCUSDT")
+    // client.futuresWallet(coin="BTC")
+
+
+}
+run()
+
+
+
+
 module.exports = {
     Bitmex
     // , client, client2
