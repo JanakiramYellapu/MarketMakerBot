@@ -42,7 +42,7 @@ const MIN_SPREAD = 0.01
 
 // If True, market-maker will place orders just inside the existing spread and work the interval % outwards,
 // rather than starting in the middle and killing potentially profitable spreads.
-const MAINTAIN_SPREADS = True
+const MAINTAIN_SPREADS = true
 
 // This number defines far much the price of an existing order can be from a desired order before it is amended.
 // This is useful for avoiding unnecessary calls and maintaining your ratelimits.
@@ -63,7 +63,7 @@ const RELIST_INTERVAL = 0.01
 
 // Position limits - set to True to activate. Values are in contracts.
 // If you exceed a position limit, the bot will log and stop quoting that side.
-const CHECK_POSITION_LIMITS = False
+const CHECK_POSITION_LIMITS = false
 const MIN_POSITION = -10000
 const MAX_POSITION = 10000
 
@@ -71,15 +71,15 @@ const MAX_POSITION = 10000
 // Use to guarantee a maker rebate.
 // However -- orders that would have matched immediately will instead cancel, and you may end up with
 // unexpected delta. Be careful.
-const POST_ONLY = False
+const POST_ONLY = false
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Misc Behavior, Technicals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // If true, don't set up any orders, just say what we would do
-// DRY_RUN = True
-const DRY_RUN = False
+const DRY_RUN = true
+// const DRY_RUN = false
 
 // How often to re-check and replace orders.
 // Generally, it's safe to make this short because we're fetching from websockets. But if too many
@@ -95,7 +95,7 @@ const TIMEOUT = 7
 const DRY_BTC = 50
 
 // Available levels: logging.(DEBUG|INFO|WARN|ERROR)
-const LOG_LEVEL = logging.INFO
+// const LOG_LEVEL = logging.INFO
 
 // To uniquely identify orders placed by this bot, the bot sends a ClOrdID (Client order ID) that is attached
 // to each order so its source can be identified. This keeps the market maker from cancelling orders that are
@@ -107,7 +107,7 @@ const LOG_LEVEL = logging.INFO
 const ORDERID_PREFIX = "mm_bitmex_"
 
 // If any of these files (and this file) changes, reload the bot.
-const WATCHED_FILES = [join('market_maker', 'market_maker.py'), join('market_maker', 'bitmex.py'), 'settings.py']
+// const WATCHED_FILES = [join('market_maker', 'market_maker.py'), join('market_maker', 'bitmex.py'), 'settings.py']
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,6 +119,9 @@ const CONTRACTS = ['XBTUSD']
 
 
 module.exports ={
+    SYMBOL,
+    API_KEY,
+    API_SECRET,
     INTERVAL,
     MIN_SPREAD,
     MAINTAIN_SPREADS,
@@ -133,8 +136,8 @@ module.exports ={
     API_ERROR_INTERVAL,
     TIMEOUT,
     DRY_BTC,
-    LOG_LEVEL,
+    // LOG_LEVEL,
     ORDERID_PREFIX,
-    WATCHED_FILES,
+    // WATCHED_FILES,
     CONTRACTS,
 }

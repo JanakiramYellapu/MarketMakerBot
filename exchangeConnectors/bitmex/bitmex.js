@@ -1,5 +1,5 @@
 const { Order, Position, Wallet, Leverage, BookTicker } = require("../../serializers")
-// const APIError = require("../../utils/error")
+const APIError = require("../../utils/error")
 const { BitmexAPI } = require("bitmex-node")
 const BitmexWS = require('bitmex-realtime-api');
 const wait = n => new Promise(r => setTimeout(r, n));
@@ -9,7 +9,7 @@ class Bitmex {
         this.client = new BitmexAPI({
             apiKeyID: API_KEY,
             apiKeySecret: API_SECRET,
-            testnet: true //testnet ? testnet : false
+            testnet: testnet ? testnet : false
         })
         this.wsClient = new BitmexWS({
             testnet: testnet ? testnet : false
@@ -37,9 +37,9 @@ class Bitmex {
 
     async futuresBuy(symbol, quantity, price, params = {}, callback = false){
         try {
-            // if (this.RATE_LIMIT_BLOCKED) {
-            //     throw new Error(this.RATE_LIMIT_MSG)
-            // }
+            if (this.RATE_LIMIT_BLOCKED) {
+                throw new Error(this.RATE_LIMIT_MSG)
+            }
             const response = await this.client.Order.new({
                 symbol,
                 orderQty: quantity,
@@ -53,23 +53,22 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            console.log(error)
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresBuy",
-            //         data: { symbol, quantity, price, params }
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresBuy",
+                    data: { symbol, quantity, price, params }
+                }
+            })
         }
     }
 
@@ -91,22 +90,22 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresSell",
-            //         data: { symbol, quantity, price, params }
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresSell",
+                    data: { symbol, quantity, price, params }
+                }
+            })
         }
     }
 
@@ -127,22 +126,22 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresMarketBuy",
-            //         data: { symbol, quantity, params }
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresMarketBuy",
+                    data: { symbol, quantity, params }
+                }
+            })
         }
     }
 
@@ -164,22 +163,22 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresBuy",
-            //         data: { symbol, quantity, params }
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresBuy",
+                    data: { symbol, quantity, params }
+                }
+            })
         }
     }
     async futuresMarketBuyAsync({symbol, quantity, params}){
@@ -223,14 +222,14 @@ class Bitmex {
             const response = await this.client.Position.updateLeverage({ symbol, leverage })
             return new Leverage().transformBitmex(response)
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresUpdateLeverage",
-            //         data: { symbol, leverage, params }
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresUpdateLeverage",
+                    data: { symbol, leverage, params }
+                }
+            })
         }
     }
 
@@ -247,14 +246,14 @@ class Bitmex {
         } catch (error) {
             console.log("inside error")
             console.log(error)
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresPosition",
-            //         data: { symbol, params }
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresPosition",
+                    data: { symbol, params }
+                }
+            })
         }
     }
 
@@ -281,13 +280,13 @@ class Bitmex {
             // return new Wallet().transformBitmex(instrument)
         } catch (error) {
                 console.log(error)
-    //         throw new APIError({
-    //             message: error.message,
-    //             name: this.errorBanner,
-    //             meta: {
-    //                 origin: "futuresWallet",
-    //             }
-    //         })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresWallet",
+                }
+            })
         }
     }
 
@@ -299,13 +298,13 @@ class Bitmex {
             // return new Wallet().transformBitmex(response)
         } catch (error) {
                 console.log(error)
-    //         throw new APIError({
-    //             message: error.message,
-    //             name: this.errorBanner,
-    //             meta: {
-    //                 origin: "futuresWallet",
-    //             }
-    //         })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresWallet",
+                }
+            })
         }
     }
 
@@ -316,13 +315,13 @@ class Bitmex {
             response = response.pop()
             return new Order().transformBitmex(response)
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresOrderStatus",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresOrderStatus",
+                }
+            })
         }
     }
 
@@ -333,13 +332,13 @@ class Bitmex {
             response = response.pop()
             return new Order().transformBitmex(response)
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresCancelOrder",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresCancelOrder",
+                }
+            })
         }
     }
 
@@ -348,13 +347,13 @@ class Bitmex {
             let response = await this.client.Order.cancelAll({ symbol })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresCancelOrder",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresCancelOrder",
+                }
+            })
         }
     }
 
@@ -363,13 +362,13 @@ class Bitmex {
             let response = await this.client.Order.getOrders({ filter: JSON.stringify({ ordStatus: "New" }) })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresOpenOrders",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresOpenOrders",
+                }
+            })
         }
     }
     async futuresAllOrders(symbol){
@@ -377,13 +376,13 @@ class Bitmex {
             let response = await this.client.Order.getOrders({ symbol })
             return response.map(o => new Order().transformBitmex(o))
         } catch (error) {
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresAllOrders",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresAllOrders",
+                }
+            })
         }
     }
 
@@ -400,23 +399,23 @@ class Bitmex {
                 callback(order)
             return order
         } catch (error) {
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     stack: error.stack,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresOrder",
-            //         data: orderBody
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                stack: error.stack,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresOrder",
+                    data: orderBody
+                }
+            })
         }
     }
 
@@ -437,23 +436,23 @@ class Bitmex {
             const counterOrder = position.prepareCounterOrderBitmex(options)
             return await this.futuresOrder({ symbol, ...counterOrder }, callback)
         } catch (error) {
-            // if (error.message != this.RATE_LIMIT_MSG) {
-            //     this.RATE_LIMIT_BLOCKED = false
-            //     this.resetRateLimit(this.RATE_LIMIT_DELAY)
-            //     this.RATE_LIMIT_DELAY =
-            //         this.RATE_LIMIT_DELAY >= 4000
-            //             ? 4000
-            //             : this.RATE_LIMIT_DELAY + 10;
-            // }
-            // throw new APIError({
-            //     message: error.message,
-            //     stack: error.stack,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresClosePosition",
-            //         data: options
-            //     }
-            // })
+            if (error.message != this.RATE_LIMIT_MSG) {
+                this.RATE_LIMIT_BLOCKED = false
+                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                this.RATE_LIMIT_DELAY =
+                    this.RATE_LIMIT_DELAY >= 4000
+                        ? 4000
+                        : this.RATE_LIMIT_DELAY + 10;
+            }
+            throw new APIError({
+                message: error.message,
+                stack: error.stack,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresClosePosition",
+                    data: options
+                }
+            })
         }
     }
 
@@ -472,10 +471,10 @@ class Bitmex {
             this.WS_CLOSED = false
             this.wsClient.addStream(Symbol, 'orderBook10', (data, symbol) => {
                 console.log(data)
-                // callback(new BookTicker().transformBitmex(data, symbol).toJSON())
+                callback(new BookTicker().transformBitmex(data, symbol).toJSON())
             });
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -491,7 +490,7 @@ class Bitmex {
             this.WS_CLOSED = true
             return true
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -499,7 +498,7 @@ class Bitmex {
         try {
             return true
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -507,7 +506,7 @@ class Bitmex {
         try {
             return true
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -515,7 +514,7 @@ class Bitmex {
         try {
             return true
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -523,7 +522,7 @@ class Bitmex {
         try {
             return true
         } catch (error) {
-            // throw new APIError(error)
+            throw new APIError(error)
         }
     }
 
@@ -543,37 +542,37 @@ class Bitmex {
 
 
 
-let client = new Bitmex({
-    API_KEY: "ZLxQoSxYmpMOXT_M_STHudMV",
-    API_SECRET: "PWeh1XiJ8kg_139lNq6LvJB6AB3vR1pHbF3Dqj07x2IuqXtZ",
-    testnet: true,
-    symbol:"XBTUSD"
-})
-function  run(){
-    //  client.futuresBuy(symbol="XBTUSD", quantity=100,price=9000).then(function(result) {
-    //     console.log(result); // "normalReturn"
-    //   })
-    // client.futuresMarketBuyAsync(symbol="XBTUSD", quantity=100).then(function(result) {
-    //     console.log(result); // "normalReturn"
-    //   })
-    // client.futuresUpdateLeverage("BTCUSDT",1,1)
-    // client.futuresPosition("XBTUSD")
-    client.futuresInstrument("XBTUSD").then(function(result) {
-            console.log(result); 
-          })
-    // client.futuresOrderStatus("BTCUSDT",117993)
-    // client.futuresCancelOrder("BTCUSDT",117993)
-    // client.futuresCancelAll("BTCUSDT")
-    // client.futuresOpenOrders("BTCUSDT")
-    // client.futuresAllOrders("BTCUSDT")
-    // client.futuresBookTickerStream("XBTUSD")
-    // client.futuresTerminateBookTickerStream("BTCUSDT")
-    // client.futuresClosePosition("BTCUSDT")
-    // client.futuresWallet(coin="BTC")
+// let client = new Bitmex({
+//     API_KEY: "ZLxQoSxYmpMOXT_M_STHudMV",
+//     API_SECRET: "PWeh1XiJ8kg_139lNq6LvJB6AB3vR1pHbF3Dqj07x2IuqXtZ",
+//     testnet: true,
+//     symbol:"XBTUSD"
+// })
+// function  run(){
+//     //  client.futuresBuy(symbol="XBTUSD", quantity=100,price=9000).then(function(result) {
+//     //     console.log(result); // "normalReturn"
+//     //   })
+//     // client.futuresMarketBuyAsync(symbol="XBTUSD", quantity=100).then(function(result) {
+//     //     console.log(result); // "normalReturn"
+//     //   })
+//     // client.futuresUpdateLeverage("BTCUSDT",1,1)
+//     // client.futuresPosition("XBTUSD")
+//     client.futuresInstrument("XBTUSD").then(function(result) {
+//             console.log(result); 
+//           })
+//     // client.futuresOrderStatus("BTCUSDT",117993)
+//     // client.futuresCancelOrder("BTCUSDT",117993)
+//     // client.futuresCancelAll("BTCUSDT")
+//     // client.futuresOpenOrders("BTCUSDT")
+//     // client.futuresAllOrders("BTCUSDT")
+//     // client.futuresBookTickerStream("XBTUSD")
+//     // client.futuresTerminateBookTickerStream("BTCUSDT")
+//     // client.futuresClosePosition("BTCUSDT")
+//     // client.futuresWallet(coin="BTC")
 
 
-}
-run()
+// }
+// run()
 
 
 

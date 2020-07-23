@@ -1,14 +1,14 @@
 const config = require('./config')
 const bitMex = require('./exchangeConnectors/bitmex/bitmex')
-var Promise = require('promise');
+// var Promise = require('promise');
 
 // const bybit = require('./exchangeConnectors/bybit')
 // console.log()
 
 class ExchangeInterface {
-    constructor(dry_run = "False") {
-        this.dry_run = config.dry_run
-        this.symbol = config.symbol
+    constructor() {
+        this.dry_run = config.DRY_RUN
+        this.symbol = config.SYMBOL
         // this.exchange = await exchanges(exchangeName)
         // this.bitmex = bitmex.Bitmex(base_url = config.BASE_URL, symbol = this.symbol,
             // apiKey = config.API_KEY, apiSecret = config.API_SECRET,
@@ -21,17 +21,17 @@ class ExchangeInterface {
 
     }
 
-    get_instrument(symbol = "None") {
+    async get_instrument(symbol = "None") {
         if (symbol === "None") {
             symbol = this.symbol
-            return this.bitmex.futuresInstrument(symbol)
+            return await this.bitmex.futuresInstrument(symbol)
         }
     }
 
     async check_if_orderbook_empty() {
         // """This function checks whether the order book is empty"""
-        let instrument = await  this.get_instrument()
-        console.log(instrument)
+        let instrument = await this.get_instrument()
+        console.log("Instrument :", instrument)
         if (instrument['midPrice'] === "None") {
             throw errors.MarketEmptyError("Orderbook is empty, cannot quote")
         }
@@ -41,7 +41,7 @@ class ExchangeInterface {
     }
 
     async check_market_open() {
-        let instrument = await   this.get_instrument()
+        let instrument = await this.get_instrument()
         // this.get_instrument().then(function(result) {
         //     console.log(result); 
         //   })
@@ -133,16 +133,16 @@ class ExchangeInterface {
 }
 class OrderManager {
     constructor() {
-        this.exchange = new ExchangeInterface(config.DRY_RUN)
+        this.exchange = new ExchangeInterface()
         // this.instrument = this.exchange.get_instrument()
         this.start_time = new Date()
         // console.log(this.start_time)
-        this.instrument = this.exchange.get_instrument()
+        this.instrument =  this.exchange.get_instrument()
         // this.instrument.then(function(result) {
         //     console.log(result); 
         //   })
         // console.log(this.instrument)
-        this.starting_qty = this.exchange.get_delta()
+        this.starting_qty =  this.exchange.get_delta()
         // console.log(this.starting_qty)
         this.running_qty = this.starting_qty
         // this.reset()
