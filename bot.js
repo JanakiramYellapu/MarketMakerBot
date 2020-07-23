@@ -1,25 +1,29 @@
 const config = require('./config')
 const bitMex = require('./exchangeConnectors/bitmex/bitmex')
 var Promise = require('promise');
+const math = require('mathjs')
+const wait = n => new Promise(r => setTimeout(r, n));
 
 // const bybit = require('./exchangeConnectors/bybit')
 // console.log()
 
 class ExchangeInterface {
     constructor(dry_run = "False") {
-        this.dry_run = config.dry_run
-        this.symbol = config.symbol
+        this.dry_run = config.DRY_RUN
+        this.symbol = config.SYMBOL
+        console.log(this.symbol)
         // this.exchange = await exchanges(exchangeName)
         // this.bitmex = bitmex.Bitmex(base_url = config.BASE_URL, symbol = this.symbol,
             // apiKey = config.API_KEY, apiSecret = config.API_SECRET,
             // orderIDPrefix = config.ORDERID_PREFIX, postOnly = config.POST_ONLY,
             // timeout = config.TIMEOUT)
-        this.bitmex = new bitMex.Bitmex({API_KEY:config.API_KEY, 
-                                            API_SECRET:config.API_SECRET,
-                                            testnet: this.dry_run,
-                                            symbol: this.symbol})    
-
-    }
+        this.bitmex = new bitMex.Bitmex({
+                                   API_KEY:config.API_KEY, 
+                                    API_SECRET:config.API_SECRET,
+                                    testnet: this.dry_run,
+                                    symbol:this.symbol
+                                        })  
+         }
 
     get_instrument(symbol = "None") {
         if (symbol === "None") {
@@ -31,7 +35,7 @@ class ExchangeInterface {
     async check_if_orderbook_empty() {
         // """This function checks whether the order book is empty"""
         let instrument = await  this.get_instrument()
-        console.log(instrument)
+        // console.log(instrument)
         if (instrument['midPrice'] === "None") {
             throw errors.MarketEmptyError("Orderbook is empty, cannot quote")
         }
@@ -42,68 +46,86 @@ class ExchangeInterface {
 
     async check_market_open() {
         let instrument = await   this.get_instrument()
-        // this.get_instrument().then(function(result) {
-        //     console.log(result); 
-        //   })
-        // Promise.then((instrument)=> {
-        //     console.log("Success!", instrument);
-        //   })
-        // console.log(instrument)
         if (instrument['state'] !== "Open" && instrument['state'] !== "Close") {
-            console.log(`The instrument ${this.symbol} is not open State: ${instrument['state']}`)
+                throw(`The instrument ${this.symbol} is not open State: ${instrument['state']}`)
             // throw errors.MarketClosedError(`The instrument ${this.symbol} is not open State: ${instrument['state']}`)
         }else{
             console.log("market open")
         }
         console.log("ss")
     }
-    get_ticker(symbol = "None") {
+    async get_ticker(symbol = "None") {
         if (symbol === "None") {
             symbol = this.symbol
-            return this.bitmex.ticker_data(symbol)
+            let ticker = await this.bitmex.getTicker(symbol)
+            console.log("ticker ",ticker)
+            return ticker
         }
 
     }
     get_orders(){
-        if(this.dry_run)
-              return []
-        return this.bitmex.open_orders()
+        // if(this.dry_run)
+            //   return []
+        return this.bitmex.futuresOpenOrders()
     }
        
 
-    get_highest_buy(){
-        let buys =  this.get_orders().filter(p => p['side'] == "Buy")
-        if(!buys.length){
-            return {'price': -math.pow(2,32)}
+    async get_highest_buy(){
+        console.log("inside get highest buy")
+        let buys = await  this.get_orders()
+        let temp = []
+        for(let data of buys){
+            if(data.side == "BUY"){
+                temp.push(data.price)
+            }
         }
-        let temp = buys.filter(p => p['price'])
+        // console.log(temp)
+        if(!temp.length){
+            console.log("buys legth zero")
+            return  (-math.pow(2,32))
+        }
         let highest_buy = math.max(temp)
-        return highest_buy ? highest_buy : {'price': -math.pow(2,32)}
+        let high =  highest_buy ? highest_buy :  (-math.pow(2,32))
+        console.log("highest buy=",high)
+        return high
     }
 
-    get_lowest_sell(){
-        let sell =  this.get_orders().filter(p => p['side'] == "Sell")
-        if(!sell.length){
-            return {'price': math.pow(2,32)}
+    async get_lowest_sell(){
+        let buys = await  this.get_orders()
+        let temp = []
+        for(let data of buys){
+            if(data.side == "SELL"){
+                temp.push(data.price)
+            }
         }
-        let temp = sell.filter(p => p['price'])
+        // console.log(temp)
+        if(!temp.length){
+            console.log("sell legth zero")
+            return  math.pow(2,32)
+        }
         let lowest_sell = math.min(temp)
-        return lowest_sell ? lowest_sell : {'price': math.pow(2,32)}
+        let low =  lowest_sell ? lowest_sell :  math.pow(2,32)
+        console.log("lowest sell=",low)
+        return low
     }
 
-    get_position(symbol="None"){
+    async get_position(symbol="None"){
         if(symbol == "None"){
             symbol = this.symbol
         }
         // console.log("inside get-position")
-        return this.bitmex.futuresPosition(symbol)
+        let pos = await this.bitmex.futuresPosition(symbol)//[0].currentQty
+        console.log(pos[0].currentQty)
+        return pos[0].currentQty
     }
 
-    get_delta(symbol="None"){
+    async get_delta(symbol="None"){
         if(symbol == "None"){
             symbol = this.symbol
         }
-        return this.get_position(symbol)['currentQty']
+        let qty = await this.get_position(symbol)
+        // console.log("curren-qty",qty)
+        return qty//[0].currentQty
     }
 
     cancel_all_orders(){
@@ -138,13 +160,10 @@ class OrderManager {
         this.start_time = new Date()
         // console.log(this.start_time)
         this.instrument = this.exchange.get_instrument()
-        // this.instrument.then(function(result) {
-        //     console.log(result); 
-        //   })
         // console.log(this.instrument)
         this.starting_qty = this.exchange.get_delta()
-        // console.log(this.starting_qty)
         this.running_qty = this.starting_qty
+        // console.log("runn",this.running_qty)
         // this.reset()
     }
 
@@ -154,7 +173,7 @@ class OrderManager {
         this.sanity_check()
     }
 
-    sanity_check() {
+    async sanity_check() {
 
         //  Check if OB is empty - if so, can't quote.
         this.exchange.check_if_orderbook_empty()
@@ -163,15 +182,19 @@ class OrderManager {
         this.exchange.check_market_open()
 
         // # Get ticker, which sets price offsets and prints some debugging info.
-        // ticker = this.get_ticker()
+        let ticker = this.get_ticker()
+        // console.log(ticker)
 
         // # Sanity check:
-        // if(this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]){
-        //     console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
-        //     console.log(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)            
-        //     console.log("Sanity check failed, exchange data is inconsistent");            
-        //     process.exit(1)
-        // }
+        let get = await this.get_price_offset(-1)
+        console.log("=========get",get)
+        if(this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]){
+            console.log("**************************************inside get-price-offset********************")
+            console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
+            console.log(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)            
+            console.log("Sanity check failed, exchange data is inconsistent");            
+            process.exit(1)
+        }
 
         // // # Messaging if the position limits are reached
         // if(this.long_position_limit_exceeded()){
@@ -188,24 +211,33 @@ class OrderManager {
     }
 
 
-    get_ticker() {
-        let ticker = this.exchange.get_ticker()
-        let tickLog = this.exchange.get_instrument()['tickLog']
+    async get_ticker() {
+        let ticker = await this.exchange.get_ticker()
+        let tickLog = await this.exchange.get_instrument()['tickLog']
+        this.instrument = await this.exchange.get_instrument()
 
         //  Set up our buy & sell positions as the smallest possible unit above and below the current spread
         //  and we'll work out from there. That way we always have the best price but we don't kill wide
         //  and potentially profitable spreads.
+        console.log("====>",ticker["buy"]) //+ this.instrument['tickSize'])
         this.start_position_buy = ticker["buy"] + this.instrument['tickSize']
         this.start_position_sell = ticker["sell"] - this.instrument['tickSize']
-
-        // # If we're maintaining spreads and we already have orders in place,
-        // # make sure they're not ours. If they are, we need to adjust, otherwise we'll
-        // # just work the orders inward until they collide.
-        if(config.MAINTAIN_SPREADS)
-            if(ticker['buy'] == this.exchange.get_highest_buy())
+        console.log("----->",this.start_position_buy)
+        console.log("----->",this.start_position_sell)
+        // // # If we're maintaining spreads and we already have orders in place,
+        // // # make sure they're not ours. If they are, we need to adjust, otherwise we'll
+        // // # just work the orders inward until they collide.
+        if(config.MAINTAIN_SPREADS){
+            console.log("inside maintain spreads")
+            if(ticker['buy'] == this.exchange.get_highest_buy()){
                 this.start_position_buy = ticker["buy"]
-            if(ticker['sell'] == this.exchange.get_lowest_sell())
+                console.log("pr")
+                }
+            if(ticker['sell'] == this.exchange.get_lowest_sell()){
                 this.start_position_sell = ticker["sell"]
+                console.log("pr")
+                }
+        }
 
         // # Back off if our spread is too small.
         if(this.start_position_buy * (1.00 + config.MIN_SPREAD) > this.start_position_sell){
@@ -215,24 +247,37 @@ class OrderManager {
 
         // # Midpoint, used for simpler order placement.
         this.start_position_mid = ticker["mid"]
-        // logger.info(
-        //     "%s Ticker: Buy: %.*f, Sell: %.*f" %
-        //     (self.instrument['symbol'], tickLog, ticker["buy"], tickLog, ticker["sell"])
-        // )
+        // // logger.info(
+        // //     "%s Ticker: Buy: %.*f, Sell: %.*f" %
+        // //     (self.instrument['symbol'], tickLog, ticker["buy"], tickLog, ticker["sell"])
+        // // )
+        // await wait(3*1000)
         console.log(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
         
         return ticker
                
     }
 
-    get_price_offset(index){
+    async get_price_offset(index){
+        console.log("index =>",index)
+        if(index<0){
+            console.log("negative")
+        }
         // """Given an index (1, -1, 2, -2, etc.) return the price for that side of the book.
         //    Negative is a buy, positive is a sell."""
         // # Maintain existing spreads for max profit
+        let start_position
         if(config.MAINTAIN_SPREADS){
-            let start_position =  index < 0 ? this.start_position_buy : this.start_position_sell
+            if(index<0){
+                 start_position = this.start_position_buy
+                index =  index + 1
+            }
+            else{
+                 start_position = this.start_position_sell
+                index =  index - 1
+            }
             // # First positions (index 1, -1) should start right at start_position, others should branch from there
-            let index = index < 0 ? index + 1 : index - 1
+            // let index = index < 0 ? index + 1 : index - 1
         }
         else{
             // # Offset mode: ticker comes from a reference exchange and we define an offset.
@@ -248,8 +293,10 @@ class OrderManager {
                 start_position = this.start_position_buy
             }
         }
-
-        return math.round(start_position * (1 + config.INTERVAL) ** index, this.instrument['tickSize'])
+        // await wait(3*1000)
+        let temp = (start_position * (math.pow((1 + config.INTERVAL), index)))
+        // console.log(start_position,"get offset value")//, temp, " index ",index)
+        return temp//, this.instrument['tickSize'])
     }
 
     // # Position Limits
