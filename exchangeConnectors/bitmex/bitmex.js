@@ -237,7 +237,7 @@ class Bitmex {
         try {
             // console.log("inside futures-position")
             const positions = await this.client.Position.get({ filter: JSON.stringify({ symbol }) })
-            console.log("pos", positions)
+            // console.log("pos", positions)
             // console.log("inside futures position")
             // positions.then(function(result) {
             //     console.log(result); 

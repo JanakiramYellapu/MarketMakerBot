@@ -115,7 +115,7 @@ class ExchangeInterface {
         }
         // console.log("inside get-position")
         let pos = await this.bitmex.futuresPosition(symbol)//[0].currentQty
-        console.log(pos[0].currentQty)
+        console.log("hello ", pos[0].currentQty)
         return pos[0].currentQty
     }
 
@@ -159,9 +159,9 @@ class OrderManager {
         this.exchange = new ExchangeInterface()
         // this.instrument = this.exchange.get_instrument()
         this.start_time = new Date()
-        // console.log(this.start_time)
-        this.instrument = this.exchange.get_instrument()
-        // console.log(this.instrument)
+        console.log(this.start_time)
+        this.instrument =  this.exchange.get_instrument()
+        // console.log("Instrument :", this.instrument)
         this.starting_qty = this.exchange.get_delta()
         this.running_qty = this.starting_qty
         // console.log("runn",this.running_qty)
@@ -171,7 +171,7 @@ class OrderManager {
 
     reset(){
         this.exchange.cancel_all_orders()
-        // this.sanity_check()
+        this.sanity_check()
     }
 
     async sanity_check() {
