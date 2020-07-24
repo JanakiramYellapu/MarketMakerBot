@@ -128,27 +128,28 @@ class ExchangeInterface {
         return qty//[0].currentQty
     }
 
-    cancel_all_orders(){
-        if(self.dry_run){
-             return
-        }
+    async cancel_all_orders(){
+        // if(this.dry_run){
+        //      return
+        // }
         console.log("Resetting current position. Cancelling all existing orders.");
-        let tickLog = this.get_instrument()['tickLog']
-
+        let temp = await this.get_instrument()
+        let tickLog = temp['tickLog']
         // # In certain cases, a WS update might not make it through before we call this.
         // # For that reason, we grab via HTTP to ensure we grab them all.
-        let orders = this.bitmex.http_open_orders()
-
-        for(let order in orders){
+        let orders = await this.bitmex.futuresOpenOrders()//http_open_orders()
+        // console.log("@@@@@@@@@@@@@@@@@@@@@",orders)
+        for(let order of orders){
+            // console.log(order)
             console.log(`Cancelling: ${order['side']} ${order['orderQty']} ${tickLog} ${order['price']} `);
         }
-
+        console.log("orders-length",orders.length)
         if(orders.length){
-            for(let order in orders){
-                this.bitmex.cancel(order['orderID'])
+            for(let order of orders){
+                this.bitmex.futuresCancelOrder(this.symbol,order['orderID'])
             }
         }
-        sleep(config.API_REST_INTERVAL)
+        // sleep(config.API_REST_INTERVAL)
     }
 
 
@@ -164,13 +165,13 @@ class OrderManager {
         this.starting_qty = this.exchange.get_delta()
         this.running_qty = this.starting_qty
         // console.log("runn",this.running_qty)
-        // this.reset()
+        this.reset()
     }
 
 
     reset(){
         this.exchange.cancel_all_orders()
-        this.sanity_check()
+        // this.sanity_check()
     }
 
     async sanity_check() {
@@ -182,12 +183,12 @@ class OrderManager {
         this.exchange.check_market_open()
 
         // # Get ticker, which sets price offsets and prints some debugging info.
-        let ticker = this.get_ticker()
+        let ticker = await this.get_ticker()
         // console.log(ticker)
 
         // # Sanity check:
-        let get = await this.get_price_offset(-1)
-        console.log("=========get",get)
+        // let get = await this.get_price_offset(-1)
+        // console.log("=========get",get)
         if(this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]){
             console.log("**************************************inside get-price-offset********************")
             console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
@@ -196,16 +197,22 @@ class OrderManager {
             process.exit(1)
         }
 
-        // // # Messaging if the position limits are reached
-        // if(this.long_position_limit_exceeded()){
-        //     console.log("Long delta limit exceeded");
-        //     console.log(`Current Position: ${this.exchange.get_delta()} Maximum position: ${config.MAX_POSITION}`)            
-        // }
+        // # Messaging if the position limits are reached
+        if(await this.long_position_limit_exceeded()){
+            console.log("Long delta limit exceeded");
+            console.log(`Current Position: ${this.exchange.get_delta()} Maximum position: ${config.MAX_POSITION}`)            
+        }
+        else{
+            console.log("long position limit not exceeded")
+        }
 
-        // if(this.short_position_limit_exceeded()){
-        //     console.log("Short delta limit exceeded");
-        //     console.log(`Current Position: ${this.exchange.get_delta()} Maximum position: ${config.MIN_POSITION}`)            
-        // }
+        if(await this.short_position_limit_exceeded()){
+            console.log("Short delta limit exceeded");
+            console.log(`Current Position: ${this.exchange.get_delta()} Maximum position: ${config.MIN_POSITION}`)            
+        }
+        else{
+            console.log("short position limit not exceeded")
+        }
 
 
     }
@@ -219,7 +226,7 @@ class OrderManager {
         //  Set up our buy & sell positions as the smallest possible unit above and below the current spread
         //  and we'll work out from there. That way we always have the best price but we don't kill wide
         //  and potentially profitable spreads.
-        console.log("====>",ticker["buy"]) //+ this.instrument['tickSize'])
+        // console.log("====>",ticker["buy"]) //+ this.instrument['tickSize'])
         this.start_position_buy = ticker["buy"] + this.instrument['tickSize']
         this.start_position_sell = ticker["sell"] - this.instrument['tickSize']
         console.log("----->",this.start_position_buy)
@@ -247,11 +254,6 @@ class OrderManager {
 
         // # Midpoint, used for simpler order placement.
         this.start_position_mid = ticker["mid"]
-        // // logger.info(
-        // //     "%s Ticker: Buy: %.*f, Sell: %.*f" %
-        // //     (self.instrument['symbol'], tickLog, ticker["buy"], tickLog, ticker["sell"])
-        // // )
-        // await wait(3*1000)
         console.log(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
         
         return ticker
@@ -269,6 +271,8 @@ class OrderManager {
         let start_position
         if(config.MAINTAIN_SPREADS){
             if(index<0){
+                // console.log("debug")
+                // console.log("start_position_buy",this.start_position_buy)
                  start_position = this.start_position_buy
                 index =  index + 1
             }
@@ -294,6 +298,9 @@ class OrderManager {
             }
         }
         // await wait(3*1000)
+        // console.log("start-position",start_position)
+        // console.log("index",index)
+
         let temp = (start_position * (math.pow((1 + config.INTERVAL), index)))
         // console.log(start_position,"get offset value")//, temp, " index ",index)
         return temp//, this.instrument['tickSize'])
@@ -301,22 +308,22 @@ class OrderManager {
 
     // # Position Limits
 
-    short_position_limit_exceeded(){
+    async short_position_limit_exceeded(){
         // """Returns True if the short position limit is exceeded"""
         if(!config.CHECK_POSITION_LIMITS){
-            return False
+            return false
         }
-        let position = this.exchange.get_delta()
-        return position <= config.MIN_POSITION
+        let position = await this.exchange.get_delta()
+        return (position <= config.MIN_POSITION)
     }
 
-    long_position_limit_exceeded(){
+    async long_position_limit_exceeded(){
         // """Returns True if the long position limit is exceeded"""
         if(!config.CHECK_POSITION_LIMITS){
-            return False
+            return false
         }
-        let position = this.exchange.get_delta()
-        return position >= config.MAX_POSITION
+        let position = await this.exchange.get_delta()
+        return (position >= config.MAX_POSITION)
     }
 
     run_loop (){
