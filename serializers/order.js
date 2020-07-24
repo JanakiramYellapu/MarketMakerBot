@@ -2,6 +2,7 @@ class Order {
     constructor(options = {}) {
         this.orderId = options.orderId || 0
         this.quantity = options.quantity || 0
+        this.orderQty = options.orderQty || 0
         this.price = options.price || 0
         this.symbol = options.symbol || null
         this.side = options.side || null
@@ -80,6 +81,7 @@ class Order {
         this.symbol = order.symbol
         this.price = order.avgPx || order.price
         this.quantity = parseFloat(order.orderQty)
+        this.orderQty = order.orderQty
         this.baseQuantity = this.price ? parseFloat((this.quantity / this.price).toFixed(3)) : 0
         this.side = order.side.toUpperCase()
         this.status = order.ordStatus.toUpperCase()
@@ -116,6 +118,7 @@ class Order {
     // toJSON = () => ({
     //     orderId: this.orderId,
     //     quantity: this.quantity,
+    //     orderQty: this.orderQty,
     //     price: this.price,
     //     symbol: this.symbol,
     //     side: this.side,

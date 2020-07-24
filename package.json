@@ -18,6 +18,9 @@
   "homepage": "https://github.com/JanakiramYellapu/MarketMakerBot#readme",
   "dependencies": {
     "bitmex-node": "^1.9.0",
-    "bitmex-realtime-api": "^0.4.3"
-  }
+    "bitmex-realtime-api": "^0.4.3",
+    "mathjs": "^7.1.0",
+    "promise": "^8.1.0"
+  },
+  "devDependencies": {}
 }

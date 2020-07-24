@@ -242,6 +242,7 @@ class Bitmex {
             // positions.then(function(result) {
             //     console.log(result); 
             //   })
+            // console.log(positions)
             return positions
             // return new Position().transformBitmex(positions, symbol)
         } catch (error) {
@@ -274,6 +275,7 @@ class Bitmex {
             let instrument = matchingInstrument[0]
             // console.log("instrument---",instrument)
             instrument.tickLog = 1
+            // console.log(instrument)
             return instrument
             // # Turn the 'tickSize' into 'tickLog' for use in rounding
             // # http://stackoverflow.com/a/6190291/832202
@@ -333,6 +335,8 @@ class Bitmex {
             response = response.pop()
             return new Order().transformBitmex(response)
         } catch (error) {
+            console.log("inside cancel function")
+            console.log(error)
             // throw new APIError({
             //     message: error.message,
             //     name: this.errorBanner,
@@ -360,9 +364,15 @@ class Bitmex {
 
     async futuresOpenOrders(){
         try {
+            console.log("inside openorders")
             let response = await this.client.Order.getOrders({ filter: JSON.stringify({ ordStatus: "New" }) })
-            return response.map(o => new Order().transformBitmex(o))
+            // console.log(response)
+            let open =  response.map(o => new Order().transformBitmex(o))
+            console.log("**************************")
+            // console.log(open[0].side)
+            return open
         } catch (error) {
+            console.log("inside futuresOpenOrders", error)
             // throw new APIError({
             //     message: error.message,
             //     name: this.errorBanner,
@@ -465,6 +475,32 @@ class Bitmex {
         })
     }
 
+    async getTicker(symbol){
+        // '''Return a ticker object. Generated from instrument.'''
+
+        let instrument = await this.futuresInstrument(symbol)
+        // console.log(instrument)
+        let ticker = {}
+        // # If this is an index, we have to get the data from the last trade.
+        if(instrument['symbol'][0] == '.'){
+            ticker = {}
+            ticker['mid'] = ticker['buy'] = ticker['sell'] = ticker['last'] = instrument['markPrice']
+        }
+        // # Normal instrument
+        else {
+            let bid = instrument['bidPrice'] || instrument['lastPrice']
+            let ask = instrument['askPrice'] || instrument['lastPrice']
+            ticker = {
+                "last": instrument['lastPrice'],
+                "buy": bid,
+                "sell": ask,
+                "mid": (bid + ask) / 2
+            }
+        }
+        // console.log("ticker",ticker)
+        return ticker
+    }
+
     async futuresBookTickerStream(Symbol, callback){
         try {
             if (this.WS_CLOSED)
@@ -550,17 +586,20 @@ let client = new Bitmex({
     symbol:"XBTUSD"
 })
 function  run(){
-    //  client.futuresBuy(symbol="XBTUSD", quantity=100,price=9000).then(function(result) {
+    //  client.futuresBuy(symbol="XBTUSD", quantity=100,price=8900).then(function(result) {
     //     console.log(result); // "normalReturn"
     //   })
+     client.futuresSell(symbol="XBTUSD", quantity=50,price=9050).then(function(result) {
+        console.log(result); // "normalReturn"
+      })
     // client.futuresMarketBuyAsync(symbol="XBTUSD", quantity=100).then(function(result) {
     //     console.log(result); // "normalReturn"
     //   })
     // client.futuresUpdateLeverage("BTCUSDT",1,1)
     // client.futuresPosition("XBTUSD")
-    client.futuresInstrument("XBTUSD").then(function(result) {
-            console.log(result); 
-          })
+    // client.futuresInstrument("XBTUSD").then(function(result) {
+            // console.log(result); 
+        //   })
     // client.futuresOrderStatus("BTCUSDT",117993)
     // client.futuresCancelOrder("BTCUSDT",117993)
     // client.futuresCancelAll("BTCUSDT")
@@ -573,7 +612,7 @@ function  run(){
 
 
 }
-run()
+// run()
 
 
 
