@@ -25,10 +25,10 @@ class ExchangeInterface {
                                         })  
          }
 
-    get_instrument(symbol = "None") {
+    async get_instrument(symbol = "None") {
         if (symbol === "None") {
             symbol = this.symbol
-            return this.bitmex.futuresInstrument(symbol)
+            return await this.bitmex.futuresInstrument(symbol)
         }
     }
 
@@ -156,7 +156,7 @@ class ExchangeInterface {
 }
 class OrderManager {
     constructor() {
-        this.exchange = new ExchangeInterface(config.DRY_RUN)
+        this.exchange = new ExchangeInterface()
         // this.instrument = this.exchange.get_instrument()
         this.start_time = new Date()
         // console.log(this.start_time)
