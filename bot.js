@@ -91,19 +91,20 @@ class ExchangeInterface {
         return lowest_sell ? lowest_sell : {'price': math.pow(2,32)}
     }
 
-    get_position(symbol="None"){
+    async get_position(symbol="None"){
         if(symbol == "None"){
             symbol = this.symbol
         }
         // console.log("inside get-position")
-        return this.bitmex.futuresPosition(symbol)
+        const response = await this.bitmex.futuresPosition(symbol)
+        return  response
     }
 
-    get_delta(symbol="None"){
+    async get_delta(symbol="None"){
         if(symbol == "None"){
             symbol = this.symbol
         }
-        return this.get_position(symbol)['currentQty']
+        return this.get_position(symbol)
     }
 
     cancel_all_orders(){
@@ -281,8 +282,7 @@ class OrderManager {
             // console.log("Realtime data connection unexpectedly closed, restarting.")
             // this.restart()
         // }
-
-        this.sanity_check()  // Ensures health of mm - several cut - out points here
+        // this.sanity_check()  // Ensures health of mm - several cut - out points here
         // this.print_status()  // Print skew, delta, etc
         // this.place_orders()  // Creates desired orders and converges to existing
 
