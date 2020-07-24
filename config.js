@@ -8,10 +8,11 @@ BASE_URL = "https://testnet.bitmex.com/api/v1/"
 // API_KEY = "iQ9b-iw9Z6m9NtC1-MLqE-Eo"
 // API_SECRET = "lhBkTaHPdFVO0MLqjPQqGA66N-jo0mzzq960ZKVyBp2K7jdr"
 
-const API_KEY = "PxgBFzDaf3v7kjUZqHc-uVU-"
-const API_SECRET = "bElUAmx0JAOEvJtzxKeSLCVLyB9Paw3kRdW4cWAKVNM6jNjU"
+// const API_KEY = "PxgBFzDaf3v7kjUZqHc-uVU-"
+// const API_SECRET = "bElUAmx0JAOEvJtzxKeSLCVLyB9Paw3kRdW4cWAKVNM6jNjU"
 
-
+const API_KEY =  "ZLxQoSxYmpMOXT_M_STHudMV"
+const API_SECRET =  "PWeh1XiJ8kg_139lNq6LvJB6AB3vR1pHbF3Dqj07x2IuqXtZ"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Target
@@ -63,7 +64,7 @@ const RELIST_INTERVAL = 0.01
 
 // Position limits - set to True to activate. Values are in contracts.
 // If you exceed a position limit, the bot will log and stop quoting that side.
-const CHECK_POSITION_LIMITS = false
+const CHECK_POSITION_LIMITS = true//false
 const MIN_POSITION = -10000
 const MAX_POSITION = 10000
 
@@ -71,15 +72,15 @@ const MAX_POSITION = 10000
 // Use to guarantee a maker rebate.
 // However -- orders that would have matched immediately will instead cancel, and you may end up with
 // unexpected delta. Be careful.
-const POST_ONLY = false
+const POST_ONLY = "False"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Misc Behavior, Technicals
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // If true, don't set up any orders, just say what we would do
-const DRY_RUN = true
-// const DRY_RUN = false
+// DRY_RUN = True
+const DRY_RUN = "TRUE"
 
 // How often to re-check and replace orders.
 // Generally, it's safe to make this short because we're fetching from websockets. But if too many
