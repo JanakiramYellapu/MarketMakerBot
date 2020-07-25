@@ -170,9 +170,26 @@ class OrderManager {
 
     async reset() {
         await Promise.all([
-            // this.exchange.cancel_all_orders(), // can use directly cancelAll
+            this.cancel_all_orders(), // can use directly cancelAll
             this.sanity_check()
         ])
+    }
+
+    async cancel_all_orders(){
+        // if(this.dry_run){
+        //      return
+        // }
+        console.log("Resetting current position. Cancelling all existing orders.");
+        // # In certain cases, a WS update might not make it through before we call this.
+        // # For that reason, we grab via HTTP to ensure we grab them all.
+        let orders = await this.exchange.futuresOpenOrders()//http_open_orders()
+        for(let order of orders){
+            console.log(`Cancelling: ${order['side']} ${order['orderQty']}  ${order['price']} `);
+        }
+        if(orders.length){
+             this.exchange.futuresCancelAll(this.symbol)
+
+        }
     }
 
     async sanity_check() {
@@ -187,7 +204,7 @@ class OrderManager {
         // check if market is open.
         if (instrument['state'] !== "Open" && instrument['state'] !== "Close") {
             throw new APIError({
-                message : "Market is clos."
+                message : "Market is close."
             })
         }
 
