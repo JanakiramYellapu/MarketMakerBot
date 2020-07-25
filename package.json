@@ -19,8 +19,12 @@
   "dependencies": {
     "bitmex-node": "^1.9.0",
     "bitmex-realtime-api": "^0.4.3",
+    "fs": "0.0.1-security",
     "mathjs": "^7.1.0",
-    "promise": "^8.1.0"
+    "promise": "^8.1.0",
+    "winston": "^3.3.3",
+    "winston-console-formatter": "^1.0.0-beta.3",
+    "winston-daily-rotate-file": "^4.5.0"
   },
   "devDependencies": {}
 }

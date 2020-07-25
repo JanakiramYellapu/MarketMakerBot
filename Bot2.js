@@ -1,6 +1,8 @@
 const config = require('./config')
 const bitMex = require('./exchangeConnectors/bitmex/bitmex')
 const math = require('mathjs')
+const { loggers } = require('winston');
+const log = loggers.get('Bot');
 const APIError = require('./utils/error')
 
 
@@ -347,7 +349,8 @@ function run() {
     const om = new OrderManager({DRY_RUN : true, symbol : config.SYMBOL});
     om.run_loop();
 }
-run()
+log.info("Hello")
+// run()
 
 
 

@@ -1,3 +1,5 @@
+const ENV = "development"
+
 // Connection-Auth
 
 // API URL.
@@ -120,6 +122,7 @@ const CONTRACTS = ['XBTUSD']
 
 
 module.exports ={
+    ENV,
     SYMBOL,
     API_KEY,
     API_SECRET,
