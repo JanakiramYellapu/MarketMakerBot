@@ -273,14 +273,8 @@ class Bitmex {
             if(matchingInstrument.length == 0){
                     throw("Unable to find instrument or index with symbol: " + symbol)}
             let instrument = matchingInstrument[0]
-            // console.log("instrument---",instrument)
-            instrument.tickLog = 1
-            // console.log(instrument)
             return instrument
-            // # Turn the 'tickSize' into 'tickLog' for use in rounding
-            // # http://stackoverflow.com/a/6190291/832202
-            // instrument['tickLog'] = decimal.Decimal(str(instrument['tickSize'])).as_tuple().exponent * -1
-            // return new Wallet().transformBitmex(instrument)
+
         } catch (error) {
                 console.log(error)
             throw new APIError({
@@ -476,28 +470,25 @@ class Bitmex {
     }
 
     async getTicker(symbol){
-        // '''Return a ticker object. Generated from instrument.'''
-
         let instrument = await this.futuresInstrument(symbol)
-        // console.log(instrument)
         let ticker = {}
-        // # If this is an index, we have to get the data from the last trade.
         if(instrument['symbol'][0] == '.'){
             ticker = {}
             ticker['mid'] = ticker['buy'] = ticker['sell'] = ticker['last'] = instrument['markPrice']
         }
-        // # Normal instrument
+        // Normal instrument
         else {
             let bid = instrument['bidPrice'] || instrument['lastPrice']
             let ask = instrument['askPrice'] || instrument['lastPrice']
             ticker = {
-                "last": instrument['lastPrice'],
-                "buy": bid,
-                "sell": ask,
-                "mid": (bid + ask) / 2
+                last: instrument['lastPrice'],
+                buy: bid,
+                sell: ask,
+                mid: (bid + ask) / 2,
+                state : instrument.state,
+                tickLog : instrument.tickSize
             }
         }
-        // console.log("ticker",ticker)
         return ticker
     }
 
