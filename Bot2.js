@@ -1,14 +1,16 @@
 const config = require('./config')
 const bitMex = require('./exchangeConnectors/bitmex/bitmex')
 const math = require('mathjs')
-const { loggers } = require('winston');
-const log = loggers.get('Bot');
+// const { loggers } = require('winston');
+// const log = loggers.get('Bot');
+const { logger } = require('./utils/logger')
 const APIError = require('./utils/error')
 
 
 
+
 class OrderManager {
-    constructor({DRY_RUN, symbol}) {
+    constructor({ DRY_RUN, symbol }) {
         this.symbol = symbol || config.SYMBOL
         this.exchange = new bitMex.Bitmex({
             API_KEY: config.API_KEY,
@@ -16,57 +18,68 @@ class OrderManager {
             testnet: DRY_RUN,
             symbol: this.symbol
         })
-        console.log("Connected to Exchange.")
+        logger.info("Connected to Exchange.")
         this.reset()
     }
 
 
     async reset() {
         const response = await Promise.all([
-            await this.exchange.futuresCancelAll(this.symbol), 
+            await this.exchange.futuresCancelAll(this.symbol),
             await this.sanity_check()
         ])
+        this.run_loop()
         // console.log("response :", response[0])
-        // Place some orders and check. 
+        // Place some orders and check and log them.
     }
 
 
 
     async sanity_check() {
+        try {
+            //  Check if OB is empty - if so, can't quote 
+            let ticker = await this.exchange.getTicker(this.symbol)
+            // check if it is 0 or None ?
+            if (ticker['mid'] === "None") {
+                throw new APIError({
+                    message: "OrderBook is empty.",
+                    meta: {
+                        origin: sanityCheck
+                    }
+                })
+            }
+            // check if market is open.
+            // why we are checking not close?
+            if (ticker['state'] !== "Open" && ticker['state'] !== "Close") {
+                throw new APIError({
+                    message: "Market is close.",
+                    meta: {
+                        origin: sanityCheck
+                    }
+                })
+            }
 
-        //  Check if OB is empty - if so, can't quote 
-        let ticker = await this.exchange.getTicker(this.symbol)
-        // check if it is 0 or NOnne
-        if(ticker['mid'] === "None"){
-            throw new APIError({
-                message : "OrderBook is empty."
-            })
+            this.adjust_position_price(ticker)
+
+            // throw an error and log it and restart it ?
+            if (this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]) {
+                console.log("**************************************inside get-price-offset********************")
+                console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
+                console.log(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)
+                console.log("Sanity check failed, exchange data is inconsistent");
+                process.exit(1)
+            }
         }
-        // check if market is open.
-        if (ticker['state'] !== "Open" && ticker['state'] !== "Close") {
-            throw new APIError({
-                message : "Market is close."
-            })
-        }
-
-        this.adjustPositionPrice(ticker)
-
-        if (this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]) {
-            console.log("**************************************inside get-price-offset********************")
-            console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
-            console.log(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)
-            console.log("Sanity check failed, exchange data is inconsistent");
-            process.exit(1)
+        catch (error) {
+            logger.error(`SanityCheck failed:  ${error}`)
         }
 
     }
 
 
-    async adjustPositionPrice(ticker) {
+    async adjust_position_price(ticker) {
         this.start_position_buy = ticker["buy"] + ticker['tickLog']
         this.start_position_sell = ticker["sell"] - ticker['tickLog']
-        console.log("----->", this.start_position_buy)
-        console.log("----->", this.start_position_sell)
 
         // Back off if our spread is too small.
         if (this.start_position_buy * (1.00 + config.MIN_SPREAD) > this.start_position_sell) {
@@ -76,9 +89,7 @@ class OrderManager {
 
         // Midpoint, used for simpler order placement.
         this.start_position_mid = ticker["mid"]
-        console.log(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
-
-        return ticker
+        logger.info(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
 
     }
 
@@ -113,8 +124,8 @@ class OrderManager {
                 start_position = this.start_position_buy
             }
         }
-       
 
+        // round -off ?
         let temp = (start_position * (math.pow((1 + config.INTERVAL), index)))
         // console.log(start_position,"get offset value")//, temp, " index ",index)
         return temp
@@ -140,7 +151,31 @@ class OrderManager {
     //     return (position >= config.MAX_POSITION)
     // }
 
-    run_loop() {
+    async place_orders() {
+        // Create order items for use in convergence.
+        logger.info("Preparing orders...")
+        let buy_orders = []
+        let sell_orders = []
+        let index = config.ORDER_PAIRS
+        while (index) {
+            buy_orders.push(await this.prepare_order(-index))
+            sell_orders.push(await this.prepare_order(index))
+            index--;
+        }
+        buy_orders.map(order => logger.info(JSON.stringify(order)))
+        sell_orders.map(order => logger.info(JSON.stringify(order)))
+        // return this.converge_orders(buy_orders, sell_orders)
+    }
+    async prepare_order(index) {
+        // Create an order object.
+        let order = {}
+        order.quantity = config.ORDER_START_SIZE + ((math.abs(index) - 1) * config.ORDER_STEP_SIZE)
+        order.price = await this.get_price_offset(index)
+        order.side = index < 0 ? "BUY" : "SELL" 
+        return order
+    }
+
+    async run_loop() {
         // this.check_file_change()
         // setTimeout(config.LOOP_INTERVAL)
         // This will restart on very short downtime, but if it's longer,
@@ -151,17 +186,16 @@ class OrderManager {
         // }
         // this.sanity_check()  // Ensures health of mm - several cut - out points here
         // this.print_status()  // Print skew, delta, etc
-        // this.place_orders()  // Creates desired orders and converges to existing
+        this.place_orders()  // Creates desired orders and converges to existing
 
     }
 
 }
 
 
-
 function run() {
-    const om = new OrderManager({DRY_RUN : true, symbol : config.SYMBOL});
-    om.run_loop();
+    logger.info('Bot started.')
+    const om =  new OrderManager({ DRY_RUN: true, symbol: config.SYMBOL });
 }
 run()
 
