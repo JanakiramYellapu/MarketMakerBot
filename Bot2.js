@@ -39,7 +39,7 @@ class OrderManager {
         try {
             //  Check if OB is empty - if so, can't quote 
             let ticker = await this.exchange.getTicker(this.symbol)
-            // check if it is 0 or None ?
+            // check if it is 0 or None ? None is checked because initially mid price is ser to none.
             if (ticker['mid'] === "None") {
                 throw new APIError({
                     message: "OrderBook is empty.",
@@ -49,7 +49,7 @@ class OrderManager {
                 })
             }
             // check if market is open.
-            // why we are checking not close?
+            // why we are checking not close? because there are two type of transaction based on market status like open market transaction and close market transaction.
             if (ticker['state'] !== "Open" && ticker['state'] !== "Close") {
                 throw new APIError({
                     message: "Market is close.",
@@ -61,13 +61,28 @@ class OrderManager {
 
             this.adjust_position_price(ticker)
 
-            // throw an error and log it and restart it ?
+            // throw an error and log it and restart it ? yes , if error occur in sanity then we should print appropriate message and restart.
             if (this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]) {
-                console.log("**************************************inside get-price-offset********************")
-                console.log(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
-                console.log(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)
-                console.log("Sanity check failed, exchange data is inconsistent");
-                process.exit(1)
+                logger.info(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
+                logger.info(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)
+                throw new APIError({
+                    message: "Exchange data is inconsistent.",
+                    meta: {
+                        origin: sanityCheck
+                    }
+                })
+            }
+
+            // # Messaging if the position limits are reached
+            let pos = await this.exchange.futuresPosition(this.symbol)
+            if(pos['currentQty'] > config.MAX_POSITION){
+                logger.info("Long delta limit exceeded");
+                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MAX_POSITION}`)            
+            }
+
+            if(pos['currentQty'] < config.MIN_POSITION){
+                logger.info("Short delta limit exceeded");
+                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MIN_POSITION}`)            
             }
         }
         catch (error) {
@@ -99,20 +114,14 @@ class OrderManager {
         //  Maintain existing spreads for max profit
         let start_position
         if (config.MAINTAIN_SPREADS) {
-            if (index < 0) {
-                start_position = this.start_position_buy
-                index = index + 1
-            }
-            else {
-                start_position = this.start_position_sell
-                index = index - 1
-            }
+            start_position = index < 0 ? this.start_position_buy : this.start_position_sell
+            index = index < 0 ? index + 1 : index - 1
             // First positions (index 1, -1) should start right at start_position, others should branch from there
             // let index = index < 0 ? index + 1 : index - 1
         }
         else {
             // # Offset mode: ticker comes from a reference exchange and we define an offset.
-            let start_position = index < 0 ? this.start_position_buy : this.start_position_sell
+            start_position = index < 0 ? this.start_position_buy : this.start_position_sell
 
             // If we're attempting to sell, but our sell price is actually lower than the buy,
             // move over to the sell side.
@@ -128,28 +137,8 @@ class OrderManager {
         // round -off ?
         let temp = (start_position * (math.pow((1 + config.INTERVAL), index)))
         // console.log(start_position,"get offset value")//, temp, " index ",index)
-        return temp
+        return (math.round(temp*2))/2
     }
-
-    // # Position Limits
-
-    // async short_position_limit_exceeded() {
-    //     // """Returns True if the short position limit is exceeded"""
-    //     if (!config.CHECK_POSITION_LIMITS) {
-    //         return false
-    //     }
-    //     let position = await this.exchange.get_delta()
-    //     return (position <= config.MIN_POSITION)
-    // }
-
-    // async long_position_limit_exceeded() {
-    //     // """Returns True if the long position limit is exceeded"""
-    //     if (!config.CHECK_POSITION_LIMITS) {
-    //         return false
-    //     }
-    //     let position = await this.exchange.get_delta()
-    //     return (position >= config.MAX_POSITION)
-    // }
 
     async place_orders() {
         // Create order items for use in convergence.
