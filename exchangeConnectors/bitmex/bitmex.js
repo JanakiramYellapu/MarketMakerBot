@@ -355,22 +355,17 @@ class Bitmex {
 
     async futuresOpenOrders(){
         try {
-            console.log("inside openorders")
             let response = await this.client.Order.getOrders({ filter: JSON.stringify({ ordStatus: "New" }) })
-            // console.log(response)
             let open =  response.map(o => new Order().transformBitmex(o))
-            console.log("**************************")
-            // console.log(open[0].side)
             return open
         } catch (error) {
-            console.log("inside futuresOpenOrders", error)
-            // throw new APIError({
-            //     message: error.message,
-            //     name: this.errorBanner,
-            //     meta: {
-            //         origin: "futuresOpenOrders",
-            //     }
-            // })
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresOpenOrders",
+                }
+            })
         }
     }
     async futuresAllOrders(symbol){
