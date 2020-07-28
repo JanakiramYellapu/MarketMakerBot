@@ -281,7 +281,7 @@ class Bitmex {
                 message: error.message,
                 name: this.errorBanner,
                 meta: {
-                    origin: "futuresWallet",
+                    origin: "futuresInstrument",
                 }
             })
         }
@@ -290,11 +290,8 @@ class Bitmex {
     async futuresWallet(){
         try {
             const response = await this.client.User.getWallet()
-            // await wait(2*1000)
-            return response.data
-            // return new Wallet().transformBitmex(response)
+            return new Wallet().transformBitmex(response).toJSON()
         } catch (error) {
-                console.log(error)
             throw new APIError({
                 message: error.message,
                 name: this.errorBanner,
@@ -498,7 +495,6 @@ class Bitmex {
                 this.wsClient.socket.reconnect()
             this.WS_CLOSED = false
             this.wsClient.addStream(Symbol, 'orderBook10', (data, symbol) => {
-                console.log(data)
                 callback(new BookTicker().transformBitmex(data, symbol).toJSON())
             });
         } catch (error) {
@@ -521,6 +517,7 @@ class Bitmex {
             throw new APIError(error)
         }
     }
+
 
     async futuresUserDataStream(callback){
         try {

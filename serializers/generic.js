@@ -12,7 +12,7 @@ class Leverage {
     //     return this
     // }
 
-    transformBitmex({ symbol, leverage }){
+    transformBitmex({ symbol, leverage }) {
         this.symbol = symbol
         this.leverage = leverage
         this.exchange = "BITMEX"
@@ -48,7 +48,7 @@ class Wallet {
     //     this.exchange = "BINANCE"
     //     return this
     // }
-    
+
     // transformFTX = (wallets, asset) => {
     //     if (!wallets.result)
     //         return this
@@ -62,7 +62,7 @@ class Wallet {
     //     return this
     // }
 
-    transformBitmex(wallet){
+    transformBitmex(wallet) {
         this.balance = wallet.amount
         this.asset = wallet.currency
         this.exchange = "BITMEX"
@@ -79,11 +79,13 @@ class Wallet {
     //     this.exchange = "BITFINEX"
     // }
 
-    // toJSON = () => ({
-    //     balance: this.balance,
-    //     asset: this.asset,
-    //     exchange: this.exchange
-    // })
+    toJSON() {
+        return {
+            balance: this.balance,
+            asset: this.asset,
+            exchange: this.exchange
+        }
+    }
 }
 
 class BookTicker {
@@ -117,7 +119,7 @@ class BookTicker {
     //     this.exchange = "FTX"
     //     return this
     // }
-    transformBitmex(ticker, symbol){
+    transformBitmex(ticker, symbol) {
         this.bestAsk = parseFloat(ticker[0]["asks"][0][0])
         this.bestBid = parseFloat(ticker[0]["bids"][0][0])
         this.bestBidQty = parseFloat(ticker[0]["bids"][0][1])
@@ -139,15 +141,17 @@ class BookTicker {
     //     return this
     // }
 
-    // toJSON = () => ({
-    //     bestBid: this.bestBid,
-    //     bestAsk: this.bestAsk,
-    //     bestBidQty: this.bestBidQty,
-    //     bestAskQty: this.bestAskQty,
-    //     exchange: this.exchange,
-    //     timestamp: this.timestamp,
-    //     symbol: this.symbol,
-    // })
+    toJSON() {
+        return {
+            bestBid: this.bestBid,
+            bestAsk: this.bestAsk,
+            bestBidQty: this.bestBidQty,
+            bestAskQty: this.bestAskQty,
+            exchange: this.exchange,
+            timestamp: this.timestamp,
+            symbol: this.symbol,
+        }
+    }
 }
 
 class SpreadData {

@@ -7,8 +7,6 @@ const { logger } = require('./utils/logger')
 const APIError = require('./utils/error')
 
 
-
-
 class OrderManager {
     constructor({ DRY_RUN, symbol }) {
         this.symbol = symbol || config.SYMBOL
@@ -19,18 +17,31 @@ class OrderManager {
             symbol: this.symbol
         })
         logger.info("Connected to Exchange.")
-        this.reset()
+        this.exchange.futuresBookTickerStream(this.symbol, (data) => this.ticker = data) 
+        logger.info(`Subscribed to ${this.symbol}.`)
+        // Need to check without timeout this.ticker is not updated. ?
+        setTimeout(()=>{this.reset()}, 5000)
     }
 
 
     async reset() {
-        const response = await Promise.all([
-            await this.exchange.futuresCancelAll(this.symbol),
-            await this.sanity_check()
-        ])
-        this.run_loop()
-        // console.log("response :", response[0])
-        // Place some orders and check and log them.
+        try {
+            const response = await Promise.all([
+                await this.exchange.futuresCancelAll(this.symbol),
+                await this.sanity_check(),
+            ])
+            setInterval(()=>console.log("ticker : ", this.ticker), 5000)
+            this.run_loop()
+            // Place some orders and check and log them.
+        }
+        catch (error) {
+            throw new APIError({
+                message: "Error while resetting.",
+                meta: {
+                    origin: "reset"
+                }
+            })
+        }
     }
 
 
@@ -38,51 +49,66 @@ class OrderManager {
     async sanity_check() {
         try {
             //  Check if OB is empty - if so, can't quote 
-            let ticker = await this.exchange.getTicker(this.symbol)
-            // check if it is 0 or None ? None is checked because initially mid price is ser to none.
-            if (ticker['mid'] === "None") {
+            if (!this.ticker.bestBid && !this.ticker.bestAsk) {
                 throw new APIError({
                     message: "OrderBook is empty.",
                     meta: {
-                        origin: sanityCheck
+                        origin: "sanityCheck"
                     }
                 })
             }
+
+
+
             // check if market is open.
             // why we are checking not close? because there are two type of transaction based on market status like open market transaction and close market transaction.
-            if (ticker['state'] !== "Open" && ticker['state'] !== "Close") {
+            // if (this.ticker['state'] !== "Open" && this.ticker['state'] !== "Close") {
+            //     throw new APIError({
+            //         message: "Market is close.",
+            //         meta: {
+            //             origin: "sanityCheck"
+            //         }
+            //     })
+            // }
+
+
+            // check if we have enough balance.
+            let balance = await this.exchange.futuresWallet()
+            logger.info(` Balance ( ${balance.asset} ) : ${balance.balance}`)
+            if (balance < 0) {
                 throw new APIError({
-                    message: "Market is close.",
+                    message: "Low balance.",
                     meta: {
-                        origin: sanityCheck
+                        origin: "sanityCheck"
                     }
                 })
             }
 
-            this.adjust_position_price(ticker)
+            // set starting position buy and sell.
+            this.adjust_position_price()
 
             // throw an error and log it and restart it ? yes , if error occur in sanity then we should print appropriate message and restart.
-            if (this.get_price_offset(-1) >= ticker["sell"] || this.get_price_offset(1) <= ticker["buy"]) {
+            if (this.get_price_offset(-1) >= this.ticker["bestAsk"] || this.get_price_offset(1) <= this.ticker["bestBid"]) {
                 logger.info(`Buy: ${this.start_position_buy} Sell: ${this.start_position_sell}`);
-                logger.info(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${ticker["sell"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${ticker["buy"]}`)
+                logger.info(`First buy position: ${this.get_price_offset(-1)} Bitmex Best Ask: ${this.ticker["bestAsk"]} First sell position: ${this.get_price_offset(1)} Bitmex Best Bid: ${this.ticker["bestBid"]}`)
                 throw new APIError({
                     message: "Exchange data is inconsistent.",
                     meta: {
-                        origin: sanityCheck
+                        origin: "sanityCheck"
                     }
                 })
             }
 
             // # Messaging if the position limits are reached
             let pos = await this.exchange.futuresPosition(this.symbol)
-            if(pos['currentQty'] > config.MAX_POSITION){
+            if (pos['currentQty'] > config.MAX_POSITION) {
                 logger.info("Long delta limit exceeded");
-                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MAX_POSITION}`)            
+                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MAX_POSITION}`)
             }
 
-            if(pos['currentQty'] < config.MIN_POSITION){
+            if (pos['currentQty'] < config.MIN_POSITION) {
                 logger.info("Short delta limit exceeded");
-                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MIN_POSITION}`)            
+                logger.info(`Current Position: ${pos['currentQty']} Maximum position: ${config.MIN_POSITION}`)
             }
         }
         catch (error) {
@@ -92,9 +118,9 @@ class OrderManager {
     }
 
 
-    async adjust_position_price(ticker) {
-        this.start_position_buy = ticker["buy"] + ticker['tickLog']
-        this.start_position_sell = ticker["sell"] - ticker['tickLog']
+    async adjust_position_price() {
+        this.start_position_buy = this.ticker["bestBid"] //+ this.ticker['tickLog']
+        this.start_position_sell = this.ticker["bestAsk"] //- this.ticker['tickLog']
 
         // Back off if our spread is too small.
         if (this.start_position_buy * (1.00 + config.MIN_SPREAD) > this.start_position_sell) {
@@ -103,7 +129,7 @@ class OrderManager {
         }
 
         // Midpoint, used for simpler order placement.
-        this.start_position_mid = ticker["mid"]
+        this.start_position_mid = 0 //this.ticker["mid"]
         logger.info(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
 
     }
@@ -120,7 +146,7 @@ class OrderManager {
             // let index = index < 0 ? index + 1 : index - 1
         }
         else {
-            // # Offset mode: ticker comes from a reference exchange and we define an offset.
+            // # Offset mode: this.ticker comes from a reference exchange and we define an offset.
             start_position = index < 0 ? this.start_position_buy : this.start_position_sell
 
             // If we're attempting to sell, but our sell price is actually lower than the buy,
@@ -137,7 +163,7 @@ class OrderManager {
         // round -off ?
         let temp = (start_position * (math.pow((1 + config.INTERVAL), index)))
         // console.log(start_position,"get offset value")//, temp, " index ",index)
-        return (math.round(temp*2))/2
+        return (math.round(temp * 2)) / 2
     }
 
     async place_orders() {
@@ -160,7 +186,7 @@ class OrderManager {
         let order = {}
         order.quantity = config.ORDER_START_SIZE + ((math.abs(index) - 1) * config.ORDER_STEP_SIZE)
         order.price = await this.get_price_offset(index)
-        order.side = index < 0 ? "BUY" : "SELL" 
+        order.side = index < 0 ? "BUY" : "SELL"
         return order
     }
 
@@ -184,7 +210,7 @@ class OrderManager {
 
 function run() {
     logger.info('Bot started.')
-    const om =  new OrderManager({ DRY_RUN: true, symbol: config.SYMBOL });
+    const om = new OrderManager({ DRY_RUN: true, symbol: config.SYMBOL });
 }
 run()
 

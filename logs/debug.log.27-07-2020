@@ -1,0 +1,16 @@
+[2020-07-27 14:18:40.782] [MM-BOT] [INFO] Bot started.
+[2020-07-27 14:18:40.793] [MM-BOT] [INFO] Connected to Exchange.
+[2020-07-27 14:18:42.766] [MM-BOT] [INFO] Start Position: Buy: 10277.852499999999, Sell: 10380.644999999999, Mid:10329.25
+[2020-07-27 14:18:42.768] [MM-BOT] [INFO] Preparing orders...
+[2020-07-27 14:18:42.770] [MM-BOT] [INFO] {"quantity":600,"price":10024.715862225423,"side":"BUY"}
+[2020-07-27 14:18:42.771] [MM-BOT] [INFO] {"quantity":500,"price":10074.83944153655,"side":"BUY"}
+[2020-07-27 14:18:42.771] [MM-BOT] [INFO] {"quantity":400,"price":10125.213638744228,"side":"BUY"}
+[2020-07-27 14:18:42.772] [MM-BOT] [INFO] {"quantity":300,"price":10175.83970693795,"side":"BUY"}
+[2020-07-27 14:18:42.772] [MM-BOT] [INFO] {"quantity":200,"price":10226.718905472637,"side":"BUY"}
+[2020-07-27 14:18:42.773] [MM-BOT] [INFO] {"quantity":100,"price":10277.852499999999,"side":"BUY"}
+[2020-07-27 14:18:42.773] [MM-BOT] [INFO] {"quantity":600,"price":10642.769294528194,"side":"SELL"}
+[2020-07-27 14:18:42.773] [MM-BOT] [INFO] {"quantity":500,"price":10589.820193560396,"side":"SELL"}
+[2020-07-27 14:18:42.773] [MM-BOT] [INFO] {"quantity":400,"price":10537.13452095562,"side":"SELL"}
+[2020-07-27 14:18:42.774] [MM-BOT] [INFO] {"quantity":300,"price":10484.710966124996,"side":"SELL"}
+[2020-07-27 14:18:42.774] [MM-BOT] [INFO] {"quantity":200,"price":10432.548224999997,"side":"SELL"}
+[2020-07-27 14:18:42.774] [MM-BOT] [INFO] {"quantity":100,"price":10380.644999999999,"side":"SELL"}
