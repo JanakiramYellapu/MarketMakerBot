@@ -82,7 +82,7 @@ class OrderManager {
             }
 
             // set starting position buy and sell.
-            this.adjust_position_price()
+            await this.adjust_position_price()
 
             // throw an error and log it and restart it ? yes , if error occur in sanity then we should print appropriate message and restart.
             if (this.get_price_offset(-1) >= this.ticker["bestAsk"] || this.get_price_offset(1) <= this.ticker["bestBid"]) {
@@ -177,12 +177,12 @@ class OrderManager {
         buy_orders.map(order => logger.info(JSON.stringify(order)))
         sell_orders.map(order => logger.info(JSON.stringify(order)))
         // calling converge order.
-        this.converge_orders(buy_orders, sell_orders)
+        await this.converge_orders(buy_orders, sell_orders)
     }
     async prepare_order(index) {
         // Create an order object.
         let order = {}
-        order.quantity = config.ORDER_START_SIZE + ((math.abs(index) - 1) * config.ORDER_STEP_SIZE)
+        order.orderQty = config.ORDER_START_SIZE + ((math.abs(index) - 1) * config.ORDER_STEP_SIZE)
         order.price = await this.get_price_offset(index)
         order.side = index < 0 ? "BUY" : "SELL"
         return order
@@ -204,7 +204,7 @@ class OrderManager {
         //  Check all existing orders and match them up with what we want to place.
         //  If there's an open one, we might be able to amend it to fit what we want.
         for (let order of existing_orders) {
-
+            let desired_order = {};
             if (order['side'] == 'BUY') {
                 desired_order = buy_orders[buys_matched]
                 buys_matched += 1
@@ -266,17 +266,17 @@ class OrderManager {
                 logger.info(`No of new create order requests : ${to_create.length}`)
                 for (let i = to_create.length - 1; i >= 0; i--) {
                     let order = to_create[i]
-                    logger.info(`ORDER -> SIDE : ${order['side']}, QUANTITY :  ${order['quantity']}, PRICE : ${order['price']}`)
+                    logger.info(`ORDER -> SIDE : ${order['side']}, QUANTITY :  ${order['orderQty']}, PRICE : ${order['price']}`)
                 }
                 for (let i = 0; i < to_create.length; i++) {
                     let order = to_create[i]
                     // Placing orders.
                     if (order['side'] === 'BUY') {
-                        let response = await this.exchange.futuresBuy(this.symbol, order['quantity'], order["price"])
+                        let response = await this.exchange.futuresBuy(this.symbol, order['orderQty'], order["price"])
                         logger.info(JSON.stringify(response))
                     }
                     else {
-                        await this.exchange.futuresSell(this.symbol, order['quantity'], order['price'])
+                        await this.exchange.futuresSell(this.symbol, order['orderQty'], order['price'])
                     }
                 }
             }
@@ -301,7 +301,8 @@ class OrderManager {
         // }
         // this.sanity_check()  // Ensures health of mm - several cut - out points here
         // this.print_status()  // Print skew, delta, etc
-        this.place_orders()  // Creates desired orders and converges to existing
+        await this.place_orders()
+        await this.place_orders()  // Creates desired orders and converges to existing
 
     }
 
@@ -313,6 +314,3 @@ function run() {
     const om = new OrderManager({ DRY_RUN: true, symbol: config.SYMBOL });
 }
 run()
-
-
-
