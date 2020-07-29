@@ -176,7 +176,8 @@ class OrderManager {
         }
         buy_orders.map(order => logger.info(JSON.stringify(order)))
         sell_orders.map(order => logger.info(JSON.stringify(order)))
-        return this.converge_orders(buy_orders, sell_orders)
+        // calling converge order.
+        this.converge_orders(buy_orders, sell_orders)
     }
     async prepare_order(index) {
         // Create an order object.
@@ -219,7 +220,7 @@ class OrderManager {
                 desired_order['price'] != order['price'] &&
                 math.abs((desired_order['price'] / order['price']) - 1) > config.RELIST_INTERVAL)) {
                 to_amend.push({
-                    'orderID': order['orderId'], 'orderQty': order['cumQty'] + desired_order['orderQty'],
+                    'orderID': order['orderId'], 'quantity': order['cumQty'] + desired_order['orderQty'],
                     'price': desired_order['price'], 'side': order['side']
                 })
             }
@@ -236,53 +237,58 @@ class OrderManager {
         }
 
         if ((to_amend.length) > 0) {
-            // for (amended_order in reversed(to_amend)) {
-            //     // reference_order = [o for o in existing_orders if o['orderID'] == amended_order['orderID']][0]
-            //     logger.info("Amending %4s: %d @ %.*f to %d @ %.*f (%+.*f)" % (
-            //         amended_order['side'],
-            //         reference_order['leavesQty'], tickLog, reference_order['price'],
-            //         (amended_order['orderQty'] - reference_order['cumQty']), tickLog, amended_order['price'],
-            //         tickLog, (amended_order['price'] - reference_order['price'])
-            //     ))
-            // }
+            let length = to_amend.length
+            for (let i = length - 1; i >= 0; i--) {
+                let amended_order = to_amend[i]
+                let reference_order = existing_orders.filter(o => o['orderId'] == amended_order['orderId'])[0]
+                logger.info(`Amending Order :  (
+                    ${amended_order['side']},
+                    ${reference_order['leavesQty']}, ${reference_order['price']},
+                    ${(amended_order['orderQty'] - reference_order['cumQty'])}, ${amended_order['price']}
+                    , ${(amended_order['price'] - reference_order['price'])}
+                `)
+            }
             //  This can fail if an order has closed in the time we were processing.
             //  The API will send us`invalid ordStatus`, which means that the order's status (Filled/Canceled)
             //  made it not amendable.
             //  If that happens, we need to catch it and re - tick.
-            // try:
-            // this.exchange.amend_bulk_orders(to_amend)
-            // except requests.exceptions.HTTPError as e:
-            // errorObj = e.response.json()
-            // if errorObj['error']['message'] == 'Invalid ordStatus':
-            //     logger.warn("Amending failed. Waiting for order data to converge and retrying.")
-            // sleep(0.5)
-            // return this.place_orders()
-            // else:
-            // logger.error("Unknown error on amend: %s. Exiting" % errorObj)
-            // sys.exit(1)
-        }
-
-        if ((to_create.length) > 0) {
-            logger.info(`No of orders creating : ${to_create.length}`)
-            for (let i = to_create.length - 1; i >= 0; i--) {
-                let order = to_create[i]
-                logger.info(`ORDER -> SIDE : ${order['side']}, QUANTITY :  ${order['quantity']}, PRICE : ${order['price']}`)
+            try {
+                this.exchange.futuresAmendBulkOrders(to_amend)
             }
-            // tocreate.map(order => this.exchange.futuresBuy(
-            //     order['side'],
-            //     order['orderQty'],
-            //     order['price']
-            // ))
+            catch (error) {
+                logger.warn("Amending failed. Waiting for order data to converge and retrying.")
+                setTimeout(() => { }, 500)
+                this.place_orders()
+            }
         }
-
-        // Could happen if we exceed a delta limit
-        // if (len(to_cancel) > 0) {
-        //     logger.info("Canceling %d orders:" % (len(to_cancel)))
-        //     for (order in reversed(to_cancel)) {
-        //         logger.info("%4s %d @ %.*f" % (order['side'], order['leavesQty'], tickLog, order['price']))
-        //     }
-        //     this.exchange.cancel_bulk_orders(to_cancel)
-        // }
+        try {
+            if ((to_create.length) > 0) {
+                logger.info(`No of new create order requests : ${to_create.length}`)
+                for (let i = to_create.length - 1; i >= 0; i--) {
+                    let order = to_create[i]
+                    logger.info(`ORDER -> SIDE : ${order['side']}, QUANTITY :  ${order['quantity']}, PRICE : ${order['price']}`)
+                }
+                for (let i = 0; i < to_create.length; i++) {
+                    let order = to_create[i]
+                    // Placing orders.
+                    if (order['side'] === 'BUY') {
+                        let response = await this.exchange.futuresBuy(this.symbol, order['quantity'], order["price"])
+                        logger.info(JSON.stringify(response))
+                    }
+                    else {
+                        await this.exchange.futuresSell(this.symbol, order['quantity'], order['price'])
+                    }
+                }
+            }
+        }
+        catch(error){
+            throw new APIError({
+                message: "Insufficient balance.",
+                meta: {
+                    origin: "Converge orders."
+                }
+            })
+        }
     }
     async run_loop() {
         // this.check_file_change()

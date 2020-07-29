@@ -29,11 +29,11 @@ class Bitmex {
 
     }
 
-    // resetRateLimit = (delay) => {
-    //     // setTimeout(() => {
-    //     //     this.RATE_LIMIT_BLOCKED = false
-    //     // }, delay);
-    // }
+    resetRateLimit(delay){
+        setTimeout(() => {
+            this.RATE_LIMIT_BLOCKED = false
+        }, delay);
+    }
 
     async futuresBuy(symbol, quantity, price, params = {}, callback = false){
         try {
@@ -55,7 +55,7 @@ class Bitmex {
         } catch (error) {
             if (error.message != this.RATE_LIMIT_MSG) {
                 this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                // this.resetRateLimit(this.RATE_LIMIT_DELAY)
                 this.RATE_LIMIT_DELAY =
                     this.RATE_LIMIT_DELAY >= 4000
                         ? 4000
@@ -92,7 +92,7 @@ class Bitmex {
         } catch (error) {
             if (error.message != this.RATE_LIMIT_MSG) {
                 this.RATE_LIMIT_BLOCKED = false
-                this.resetRateLimit(this.RATE_LIMIT_DELAY)
+                // this.resetRateLimit(this.RATE_LIMIT_DELAY)
                 this.RATE_LIMIT_DELAY =
                     this.RATE_LIMIT_DELAY >= 4000
                         ? 4000
@@ -212,6 +212,22 @@ class Bitmex {
                 .then((order => resolve(order.toJSON())))
                 .catch(e => reject(e))
         })
+    }
+
+    async futuresAmendBulkOrders(orders){
+        try{
+            const response = this.client.Order.amendBulk(orders)
+        }
+        catch(error){
+            throw new APIError({
+                message: error.message,
+                name: this.errorBanner,
+                meta: {
+                    origin: "futuresAmendOrders",
+                    data: {orders}
+                }
+            })
+        }
     }
 
     async futuresUpdateLeverage(symbol, leverage, params = {}){
