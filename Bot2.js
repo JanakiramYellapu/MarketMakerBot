@@ -3,7 +3,11 @@ const bitMex = require('./exchangeConnectors/bitmex/bitmex')
 const math = require('mathjs')
 const { logger } = require('./utils/logger')
 const APIError = require('./utils/error')
-
+const fs = require('fs')
+var path = require('path');
+var Path1 = path.join(__dirname, '.', 'exchangeConnectors', 'bitmex', 'bitmex.js');
+var Path2 = path.join(__dirname, '.', 'config.js');
+var bot_start_time 
 
 class OrderManager {
     constructor({ DRY_RUN, symbol }) {
@@ -60,15 +64,15 @@ class OrderManager {
 
 
             // check if market is open.
-            // why we are checking not close? because there are two type of transaction based on market status like open market transaction and close market transaction.
-            // if (this.ticker['state'] !== "Open" && this.ticker['state'] !== "Close") {
-            //     throw new APIError({
-            //         message: "Market is close.",
-            //         meta: {
-            //             origin: "sanityCheck"
-            //         }
-            //     })
-            // }
+            let instrument = await   this.exchange.futuresInstrument(this.symbol)
+            if (instrument['state'] !== "Open" && instrument['state'] !== "Close") {
+                throw new APIError({
+                    message: "Market is close.",
+                    meta: {
+                        origin: "sanityCheck"
+                    }
+                })
+            }
 
 
             // check if we have enough balance.
@@ -292,8 +296,20 @@ class OrderManager {
             })
         }
     }
+
+    async check_file_change(){
+        const stats1 = fs.statSync(Path1)
+        let lastModifed1 = stats1.mtime
+        const stats2 = fs.statSync(Path2)
+        let lastModifed2 = stats2.mtime
+            if(lastModifed1 > bot_start_time || lastModifed2 > bot_start_time){
+                run()
+            }
+    }
+
     async run_loop() {
         while (true) {
+            await this.check_file_change()
             await this.sanity_check()  // Ensures health of mm - several cut - out points here
             await this.place_orders()  // Creates desired orders and converges to existing
         }
@@ -303,6 +319,7 @@ class OrderManager {
 
 
 function run() {
+    bot_start_time = new Date()
     logger.info('Bot started.')
     const om = new OrderManager({ DRY_RUN: true, symbol: config.SYMBOL });
 }
