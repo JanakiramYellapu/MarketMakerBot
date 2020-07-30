@@ -28,7 +28,9 @@ class OrderManager {
                 await this.exchange.futuresCancelAll(this.symbol),
                 await this.sanity_check(),
             ])
-            this.run_loop()
+            await this.place_orders()
+            // Entering loop.
+            await this.run_loop()
             // Place some orders and check and log them.
         }
         catch (error) {
@@ -126,7 +128,7 @@ class OrderManager {
         }
 
         // Midpoint, used for simpler order placement.
-        this.start_position_mid = 0 //this.ticker["mid"]
+        this.start_position_mid = (this.ticker["bestBid"] + this.ticker["bestAsk"])/2
         logger.info(`Start Position: Buy: ${this.start_position_buy}, Sell: ${this.start_position_sell}, Mid:${this.start_position_mid}`);
 
     }
@@ -196,7 +198,6 @@ class OrderManager {
         // tickLog = this.exchange.get_instrument()['tickLog']
         let to_amend = []
         let to_create = []
-        let to_cancel = []
         let buys_matched = 0
         let sells_matched = 0
         let existing_orders = await this.exchange.futuresOpenOrders()
@@ -268,20 +269,21 @@ class OrderManager {
                     let order = to_create[i]
                     logger.info(`ORDER -> SIDE : ${order['side']}, QUANTITY :  ${order['orderQty']}, PRICE : ${order['price']}`)
                 }
-                for (let i = 0; i < to_create.length; i++) {
-                    let order = to_create[i]
-                    // Placing orders.
-                    if (order['side'] === 'BUY') {
-                        let response = await this.exchange.futuresBuy(this.symbol, order['orderQty'], order["price"])
-                        logger.info(JSON.stringify(response))
-                    }
-                    else {
-                        await this.exchange.futuresSell(this.symbol, order['orderQty'], order['price'])
-                    }
-                }
+                // for (let i = 0; i < to_create.length; i++) {
+                //     let order = to_create[i]
+                //     // Placing orders.
+                //     if (order['side'] === 'BUY') {
+                //         let response = await this.exchange.futuresBuy(this.symbol, order['orderQty'], order["price"])
+                //         logger.info(`Orded placed successfully : ${response.side} : ${response.orderQty}`)
+                //     }
+                //     else {
+                //         let response = await this.exchange.futuresSell(this.symbol, order['orderQty'], order['price'])
+                //         logger.info(`Orded placed successfully : ${response.side} : ${response.orderQty}`)
+                //     }
+                // }
             }
         }
-        catch(error){
+        catch (error) {
             throw new APIError({
                 message: "Insufficient balance.",
                 meta: {
@@ -291,19 +293,10 @@ class OrderManager {
         }
     }
     async run_loop() {
-        // this.check_file_change()
-        // setTimeout(config.LOOP_INTERVAL)
-        // This will restart on very short downtime, but if it's longer,
-        // the MM will crash entirely as it is unable to connect to the WS on boot.
-        // if (this.check_connection()) {
-        // console.log("Realtime data connection unexpectedly closed, restarting.")
-        // this.restart()
-        // }
-        // this.sanity_check()  // Ensures health of mm - several cut - out points here
-        // this.print_status()  // Print skew, delta, etc
-        await this.place_orders()
-        await this.place_orders()  // Creates desired orders and converges to existing
-
+        while (true) {
+            await this.sanity_check()  // Ensures health of mm - several cut - out points here
+            await this.place_orders()  // Creates desired orders and converges to existing
+        }
     }
 
 }
